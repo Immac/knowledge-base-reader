@@ -47,7 +47,7 @@ function generateTagColor(key, value, isDark) {
 }
 
 function isDarkStyle(name) {
-  return ['calm', 'violet', 'forest'].includes(name);
+  return ['dark', 'calm', 'violet', 'forest'].includes(name);
 }
 
 function parseDateLike(value) {
@@ -77,7 +77,7 @@ function articleBadgeMarkup(article) {
 // State
 let articles = [];
 let currentArticle = null;
-let style = localStorage.getItem('kb-reader-style') || 'calm';
+let style = localStorage.getItem('kb-reader-style') || 'dark';
 let layout = localStorage.getItem('kb-reader-layout') || 'focus';
 let currentFilter = '';
 

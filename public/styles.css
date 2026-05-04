@@ -1,5 +1,6 @@
-:root {
-  /* Calm (dark default) */
+:root,
+[data-style="dark"] {
+  /* Dark */
   --bg-primary: #1a1a1a;
   --bg-secondary: #242424;
   --bg-tertiary: #2e2e2e;
@@ -11,12 +12,40 @@
   --tag-text: #ccc;
 }
 
+[data-style="calm"] {
+  --bg-primary: #16202b;
+  --bg-secondary: #1f2b38;
+  --bg-tertiary: #293847;
+  --text-primary: #eef3f8;
+  --text-secondary: #aab7c4;
+  --accent: #6aa9ff;
+  --border: #35506a;
+  --tag-bg: #243748;
+  --tag-text: #dbe8f5;
+}
+
 [data-style="violet"] {
-  --accent: #a855f7;
+  --bg-primary: #1b1425;
+  --bg-secondary: #261a35;
+  --bg-tertiary: #332146;
+  --text-primary: #f3eefe;
+  --text-secondary: #bcaed4;
+  --accent: #c084fc;
+  --border: #4a3565;
+  --tag-bg: #2e2140;
+  --tag-text: #efe3ff;
 }
 
 [data-style="forest"] {
-  --accent: #22c55e;
+  --bg-primary: #122218;
+  --bg-secondary: #183122;
+  --bg-tertiary: #22402b;
+  --text-primary: #eff8f1;
+  --text-secondary: #b3c6b9;
+  --accent: #4ade80;
+  --border: #31593f;
+  --tag-bg: #1c3324;
+  --tag-text: #e1f1e6;
 }
 
 [data-style="warm"] {

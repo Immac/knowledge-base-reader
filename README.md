@@ -26,7 +26,7 @@ The app auto-discovers articles from:
 - **Filter** - Type in the filter box to search by title, slug, or tag (e.g., `language:javascript`)
 - **Navigate** - Articles support hash-based URLs (`/#/article/my-slug`)
 - **Sections** - Article headings are shown as an outline in the sidebar
-- **Style** - Choose from Calm, Violet, Forest, Warm, or Mint themes
+- **Style** - Choose from Dark, Calm, Violet, Forest, Warm, or Mint themes
 - **Layout** - Choose from Focus, Cards, Magazine, Notebook, or Dashboard layouts
 
 ## Commands
