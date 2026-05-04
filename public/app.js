@@ -349,10 +349,6 @@ function navigateTo(slug) {
   window.location.hash = `/article/${slug}`;
 }
 
-function navigateToLanding() {
-  window.location.hash = '';
-}
-
 async function loadArticles() {
   const res = await fetch('/api/articles');
   const data = await res.json();
