@@ -570,18 +570,41 @@ body {
 }
 
 .article-body {
-  line-height: 1.7;
+  line-height: 1.8;
+}
+
+.article-body > :first-child {
+  margin-top: 0;
 }
 
 .article-body h1,
 .article-body h2,
 .article-body h3 {
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 .article-body p {
-  margin-bottom: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.article-body ul,
+.article-body ol {
+  margin: 0 0 1.15rem 1.5rem;
+  padding-left: 1rem;
+}
+
+.article-body li {
+  margin-bottom: 0.45rem;
+}
+
+.article-body ul ul,
+.article-body ol ol,
+.article-body ul ol,
+.article-body ol ul {
+  margin-top: 0.45rem;
+  margin-bottom: 0.45rem;
+  margin-left: 1.25rem;
 }
 
 .article-body code {
@@ -596,7 +619,7 @@ body {
   padding: 1rem;
   border-radius: 8px;
   overflow-x: auto;
-  margin: 1rem 0;
+  margin: 1.15rem 0;
 }
 
 .related-rail {
