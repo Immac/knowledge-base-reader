@@ -128,10 +128,32 @@ function renderArticlesList(items) {
 
 function renderArticleCards(items) {
   articleCardsEl.innerHTML = '';
+  const now = Date.now();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  
   for (const article of items) {
     const card = document.createElement('div');
     card.className = 'article-card';
-    card.innerHTML = `<h3>${article.title}</h3><p class="excerpt">${article.excerpt}</p><div class="tag-chips"></div>`;
+    
+    const modified = new Date(article.modified).getTime();
+    const daysAgo = (now - modified) / DAY_MS;
+    const isNew = daysAgo < 7;
+    const isRecent = daysAgo < 30;
+    
+    let badges = '';
+    if (isNew) {
+      badges += `<span class="badge badge-new">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle></svg>
+        New
+      </span>`;
+    } else if (isRecent) {
+      badges += `<span class="badge badge-edited">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3"></path></svg>
+        Edited
+      </span>`;
+    }
+    
+    card.innerHTML = `<h3>${article.title}</h3><p class="excerpt">${article.excerpt}</p><div class="badges">${badges}</div><div class="tag-chips"></div>`;
 
     const chips = card.querySelector('.tag-chips');
     renderTagChips(chips, article.tags, true);
@@ -255,7 +277,7 @@ async function loadArticles() {
 
 function setupEventListeners() {
   hamburgerEl.addEventListener('click', () => {
-    sidebarEl.classList.toggle('open');
+    sidebarEl.classList.toggle('hidden');
   });
 
   settingsBtnEl.addEventListener('click', () => {
