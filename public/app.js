@@ -306,6 +306,13 @@ function renderRelated(related) {
       tags.appendChild(more);
     }
 
+    if (typeof r.relevancePercent === 'number') {
+      const relevance = document.createElement('span');
+      relevance.className = 'related-relevance';
+      relevance.textContent = `${r.relevancePercent}% relevance`;
+      tags.appendChild(relevance);
+    }
+
     li.appendChild(title);
     li.appendChild(tags);
     relatedListEl.appendChild(li);

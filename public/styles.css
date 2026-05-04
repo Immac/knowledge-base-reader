@@ -666,6 +666,19 @@ body {
   gap: 0.35rem;
 }
 
+.related-relevance {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-tertiary));
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .related-tag {
   display: inline-flex;
   align-items: center;

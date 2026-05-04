@@ -67,6 +67,7 @@ function scoreArticleRelevanceImpl(articleTags, candidateTags) {
   const matchedTags = [];
   const matchedKeys = new Set();
   let score = 0;
+  const maxScore = candidateIndex.entries.length * 10;
 
   for (const candidate of candidateIndex.entries) {
     const signature = `${candidate.key}\u0000${candidate.value}`;
@@ -84,6 +85,7 @@ function scoreArticleRelevanceImpl(articleTags, candidateTags) {
 
   return {
     score,
+    relevancePercent: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0,
     matchedTags,
     matchedKeys: [...matchedKeys],
   };
@@ -108,6 +110,7 @@ function rankRelatedArticlesImpl(article, candidates) {
         slug: candidate.slug,
         title: candidate.title,
         score: result.score,
+        relevancePercent: result.relevancePercent,
         matchedTags: result.matchedTags,
         matchedKeys: result.matchedKeys,
       };
