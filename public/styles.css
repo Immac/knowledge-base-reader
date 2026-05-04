@@ -696,8 +696,23 @@ body {
   opacity: 0.18;
 }
 
-.related-match-bar.active {
-  fill: var(--accent);
+.related-match-level-4 .related-match-bar.active {
+  fill: #4ade80;
+  opacity: 1;
+}
+
+.related-match-level-3 .related-match-bar.active {
+  fill: #60a5fa;
+  opacity: 1;
+}
+
+.related-match-level-2 .related-match-bar.active {
+  fill: #facc15;
+  opacity: 1;
+}
+
+.related-match-level-1 .related-match-bar.active {
+  fill: #f87171;
   opacity: 1;
 }
 

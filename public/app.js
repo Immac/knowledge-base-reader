@@ -256,6 +256,7 @@ function createMatchIcon(level) {
   const icon = document.createElement('span');
   icon.className = 'related-match';
   const clamped = Math.max(1, Math.min(4, level || 0));
+  icon.classList.add(`related-match-level-${clamped}`);
   icon.setAttribute('role', 'img');
   icon.setAttribute('aria-label', `Match strength ${clamped} of 4`);
   icon.title = `Match strength ${clamped} of 4`;
