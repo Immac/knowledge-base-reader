@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Wiki-style browser for the knowledge base",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "node src/server.mjs",
     "start": "node src/server.mjs",
