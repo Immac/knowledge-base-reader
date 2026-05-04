@@ -631,20 +631,55 @@ body {
 .related-list {
   list-style: none;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.related-list li {
-  padding: 0.5rem 1rem;
+.related-item {
+  padding: 0.75rem 1rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 10px;
 }
 
-.related-list li:hover {
-  border-color: var(--accent);
+.related-title {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 0.45rem;
+}
+
+.related-title:hover {
+  color: var(--accent);
+}
+
+.related-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.related-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+.related-tag-more {
+  background: transparent;
+  border: 1px solid var(--border);
 }
 
 .settings-panel {

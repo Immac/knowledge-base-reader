@@ -263,8 +263,35 @@ function renderRelated(related) {
 
   for (const r of related) {
     const li = document.createElement('li');
-    li.textContent = r.title;
-    li.addEventListener('click', () => navigateTo(r.slug));
+    li.className = 'related-item';
+
+    const title = document.createElement('button');
+    title.type = 'button';
+    title.className = 'related-title';
+    title.textContent = r.title;
+    title.addEventListener('click', () => navigateTo(r.slug));
+
+    const tags = document.createElement('div');
+    tags.className = 'related-tags';
+
+    const visibleTags = (r.sharedTags || []).slice(0, 3);
+    for (const tag of visibleTags) {
+      const small = document.createElement('span');
+      small.className = 'related-tag';
+      small.textContent = `${tag.key}:${tag.value}`;
+      tags.appendChild(small);
+    }
+
+    const extraCount = (r.sharedTags || []).length - visibleTags.length;
+    if (extraCount > 0) {
+      const more = document.createElement('span');
+      more.className = 'related-tag related-tag-more';
+      more.textContent = `+${extraCount}`;
+      tags.appendChild(more);
+    }
+
+    li.appendChild(title);
+    li.appendChild(tags);
     relatedListEl.appendChild(li);
   }
 }
