@@ -146,6 +146,15 @@ body {
   flex: 1;
 }
 
+.title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.title-link:hover {
+  text-decoration: underline;
+}
+
 .main-layout {
   display: flex;
   flex: 1;
