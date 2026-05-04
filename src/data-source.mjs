@@ -110,7 +110,7 @@ export function getArticle(slug) {
   const headings = extractHeadings(bodyContent);
 
   const allArticles = listArticles();
-  const related = rankRelatedArticles({ slug, tags: data.tags || {} }, allArticles.filter(other => other.slug !== slug));
+  const related = rankRelatedArticles({ slug, tags: data.tags || {} }, allArticles);
 
   return {
     slug,

@@ -34,22 +34,21 @@ Recommended tag sources:
 - any normalized tag variants that are stored as tags
 
 Recommended tag shape:
-- `key:value` pairs
+- `key:value` pairs treated as a single tag unit
 - optional support for tag groups later, if needed
 
 ## Heuristic Scoring Model
-Score article A against article B using only tag overlap.
+Score article A against article B using only exact tag overlap.
 
 Suggested scoring rules:
-- **Exact key:value match**: highest score
-- **Shared key, different value**: lower score
-- **Repeated tag families**: count once per unique match type
+- **Exact key:value match**: the only match type
+- **Corpus rarity**: repeated tags across many articles count less
 - **Normalization**: compare case-insensitively and trim whitespace
 
-Example weights:
-- exact key:value match: `+10`
-- same key, different value: `+3`
-- generated tag matching human tag: same as exact match
+Example weighting formula:
+- compute tag rarity with an IDF-style weight across the corpus
+- aggregate exact tag overlap with a weighted F1-style score
+- use the weighted score for ranking and display
 
 ## Ranking Output
 Return a ranked list of related articles with:
@@ -106,7 +105,7 @@ A future internal helper could look like:
 scoreArticleRelevance(articleA, articleB) -> {
   score,
   matchedTags,
-  matchedKeys,
+  scoreBreakdown,
 }
 ```
 
@@ -140,7 +139,6 @@ For the related rail:
 - The UI can explain the match through shared tags
 
 ## Open Questions
-- Should same-key/different-value matches count at all, or only exact matches?
 - Should generated tags be displayed differently from human tags?
 - Should heuristic scores be normalized by article tag count?
 - Should the UI show the score to users or keep it internal?

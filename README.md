@@ -1,6 +1,6 @@
 # Knowledge Base Reader
 
-A companion web app for browsing the pi knowledge base. It discovers markdown articles, renders them as a searchable wiki, and ranks related articles by tag overlap.
+A companion web app for browsing the pi knowledge base. It discovers markdown articles, renders them as a searchable wiki, and ranks related articles by exact tag overlap.
 
 ![JavaScript](https://img.shields.io/badge/JavaScript-ESM-yellow?style=flat-square&logo=javascript)
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js)

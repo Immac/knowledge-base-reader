@@ -19,7 +19,7 @@ Knowledge Base Reader is a small companion web app for browsing a markdown-based
 
 - **Markdown-first**: articles are stored as `.md` files with frontmatter.
 - **No build step**: the app runs directly on Node.js and serves static assets.
-- **Deterministic ranking**: related articles are based on tag overlap, not semantic similarity.
+- **Deterministic ranking**: related articles are based on exact `key:value` tag overlap, not semantic similarity.
 - **Multiple data sources**: the reader looks for a local or pi knowledge base directory in a fixed order.
 - **Client-side navigation**: the UI swaps between landing and article views without a full reload.
 
@@ -36,10 +36,10 @@ Knowledge Base Reader is a small companion web app for browsing a markdown-based
 
 ## Related Article Ranking
 
-Related articles are scored from tag overlap only.
+Related articles are scored from exact `key:value` tag overlap only.
 
-- exact tag matches score highest
-- shared tag keys with different values score lower
+- exact tag matches are weighted by corpus rarity
+- tags that appear in many articles contribute less
 - the current article is excluded from the candidate set
 - the UI shows a compact visual match indicator instead of a numeric percentage
 
