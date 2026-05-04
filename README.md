@@ -27,7 +27,7 @@ The app auto-discovers articles from:
 - **Navigate** - Articles support hash-based URLs (`/#/article/my-slug`)
 - **Sections** - Article headings are shown as an outline in the sidebar
 - **Style** - Choose from Dark, Calm, Violet, Forest, Warm, or Mint themes
-- **Layout** - Choose from Focus, Cards, Magazine, Notebook, or Dashboard layouts
+- **Layout** - Choose from Dashboard, Focus, Cards, Magazine, or Notebook layouts
 
 ## Commands
 

@@ -78,7 +78,7 @@ function articleBadgeMarkup(article) {
 let articles = [];
 let currentArticle = null;
 let style = localStorage.getItem('kb-reader-style') || 'dark';
-let layout = localStorage.getItem('kb-reader-layout') || 'focus';
+let layout = localStorage.getItem('kb-reader-layout') || 'dashboard';
 let currentFilter = '';
 
 // DOM elements

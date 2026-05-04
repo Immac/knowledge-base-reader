@@ -81,12 +81,37 @@
 }
 
 .layout-cards .article-view {
-  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 1rem;
+  align-items: start;
 }
 
 .layout-cards .article-header,
+.layout-cards .article-body,
+.layout-cards .related-rail {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.layout-cards .article-header {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
 .layout-cards .article-body {
-  padding: 1.5rem;
+  margin-top: 0;
+}
+
+.layout-cards .related-rail {
+  margin-top: 0;
+}
+
+.layout-cards .article-body > *:first-child {
+  margin-top: 0;
 }
 
 .layout-cards .sections {
@@ -94,15 +119,74 @@
   border-top: 1px solid var(--border);
 }
 
-.layout-magazine .article-body {
-  max-width: 70ch;
+.layout-magazine .article-view {
+  max-width: 920px;
   margin: 0 auto;
-  font-size: 1.1rem;
-  line-height: 1.8;
+}
+
+.layout-magazine .article-header {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  padding-left: 1rem;
+}
+
+.layout-magazine .article-title {
+  font-size: 2.35rem;
+  letter-spacing: -0.03em;
+}
+
+.layout-magazine .article-body {
+  max-width: 62ch;
+  margin: 0 auto;
+  font-size: 1.08rem;
+  line-height: 1.95;
+}
+
+.layout-magazine .article-body p:first-of-type {
+  font-size: 1.15rem;
+}
+
+.layout-magazine .article-body h2,
+.layout-magazine .article-body h3 {
+  margin-top: 2rem;
+}
+
+.layout-notebook .article-view {
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-primary));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem 1.5rem 2rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.layout-notebook .article-header {
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px dashed var(--border);
 }
 
 .layout-notebook .article-body {
-  line-height: 1.9;
+  line-height: 1.95;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 1.85rem,
+    var(--border) 1.85rem,
+    var(--border) 1.92rem
+  );
+  background-size: 100% 1.92rem;
+  background-position: 0 0.15rem;
+  padding: 0.25rem 0;
+}
+
+.layout-notebook .article-body p,
+.layout-notebook .article-body ul,
+.layout-notebook .article-body ol,
+.layout-notebook .article-body pre,
+.layout-notebook .article-body blockquote {
+  max-width: 68ch;
 }
 
 .layout-dashboard .article-view {
