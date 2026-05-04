@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knowledge Base</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+      <h1 class="title">Knowledge Base</h1>
+      <button class="settings-btn" id="settings-btn" aria-label="Settings">⚙</button>
+    </header>
+
+    <div class="main-layout">
+      <nav class="sidebar" id="sidebar">
+        <div class="filter-box">
+          <input type="text" id="filter" placeholder="Filter articles..." class="filter-input">
+        </div>
+        <ul class="article-list" id="article-list"></ul>
+      </nav>
+
+      <main class="content" id="content">
+        <div class="overview" id="overview">
+          <div class="article-cards" id="article-cards"></div>
+        </div>
+
+        <article class="article-view hidden" id="article-view">
+          <header class="article-header">
+            <h2 class="article-title" id="article-title"></h2>
+            <div class="article-meta" id="article-meta"></div>
+            <div class="tag-chips" id="tag-chips"></div>
+          </header>
+
+          <nav class="sections hidden" id="sections">
+            <h3>Sections</h3>
+            <ul class="section-list" id="section-list"></ul>
+          </nav>
+
+          <div class="article-body" id="article-body"></div>
+
+          <nav class="related-rail hidden" id="related-rail">
+            <h3>Related Articles</h3>
+            <ul class="related-list" id="related-list"></ul>
+          </nav>
+        </article>
+      </main>
+    </div>
+
+    <aside class="settings-panel hidden" id="settings-panel">
+      <h3>Presentation</h3>
+
+      <div class="setting-group">
+        <label>Style</label>
+        <div class="style-options" id="style-options">
+          <button data-style="calm" class="style-btn active">Calm</button>
+          <button data-style="violet" class="style-btn">Violet</button>
+          <button data-style="forest" class="style-btn">Forest</button>
+          <button data-style="warm" class="style-btn">Warm</button>
+          <button data-style="mint" class="style-btn">Mint</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>Layout</label>
+        <div class="layout-options" id="layout-options">
+          <button data-layout="focus" class="layout-btn active">Focus</button>
+          <button data-layout="cards" class="layout-btn">Cards</button>
+          <button data-layout="magazine" class="layout-btn">Magazine</button>
+          <button data-layout="notebook" class="layout-btn">Notebook</button>
+          <button data-layout="dashboard" class="layout-btn">Dashboard</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

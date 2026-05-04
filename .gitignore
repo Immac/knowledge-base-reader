@@ -1,0 +1,10 @@
+{
+  "node_modules/": true,
+  "dist/": true,
+  ".build/": true,
+  "*.log": true,
+  ".env": true,
+  ".env.local": true,
+  ".DS_Store": true,
+  ".debugging/": true
+}
