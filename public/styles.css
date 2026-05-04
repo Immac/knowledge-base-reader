@@ -645,8 +645,8 @@ body {
 .related-title {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  width: 100%;
+  gap: 0.25rem;
+  max-width: 100%;
   min-width: 0;
   text-align: left;
   background: none;
@@ -657,6 +657,13 @@ body {
   font-weight: 600;
   padding: 0;
   margin-bottom: 0.45rem;
+}
+
+.related-title-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .related-title:hover {

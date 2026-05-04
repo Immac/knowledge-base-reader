@@ -320,8 +320,12 @@ function renderRelated(related) {
     const title = document.createElement('button');
     title.type = 'button';
     title.className = 'related-title';
-    title.textContent = r.title;
     title.addEventListener('click', () => navigateTo(r.slug));
+
+    const titleLabel = document.createElement('span');
+    titleLabel.className = 'related-title-label';
+    titleLabel.textContent = r.title;
+    title.appendChild(titleLabel);
 
     const tags = document.createElement('div');
     tags.className = 'related-tags';
