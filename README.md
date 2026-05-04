@@ -25,6 +25,7 @@ The app auto-discovers articles from:
 - **Badges** - New items and recently edited items are marked on cards
 - **Filter** - Type in the filter box to search by title, slug, or tag (e.g., `language:javascript`)
 - **Navigate** - Articles support hash-based URLs (`/#/article/my-slug`)
+- **Sections** - Article headings are shown as an outline in the sidebar
 - **Style** - Choose from Calm, Violet, Forest, Warm, or Mint themes
 - **Layout** - Choose from Focus, Cards, Magazine, Notebook, or Dashboard layouts
 

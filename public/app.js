@@ -92,7 +92,7 @@ const articleViewEl = document.getElementById('article-view');
 const articleTitleEl = document.getElementById('article-title');
 const articleMetaEl = document.getElementById('article-meta');
 const tagChipsEl = document.getElementById('tag-chips');
-const sectionsEl = document.getElementById('sections');
+const sidebarSectionsEl = document.getElementById('sidebar-sections');
 const sectionListEl = document.getElementById('section-list');
 const articleBodyEl = document.getElementById('article-body');
 const relatedRailEl = document.getElementById('related-rail');
@@ -192,31 +192,63 @@ function renderLandingPage(items = articles) {
 function showLandingPage() {
   landingPageEl.classList.remove('hidden');
   articleViewEl.classList.add('hidden');
+  articleListEl.classList.remove('hidden');
+  sidebarSectionsEl.classList.add('hidden');
 }
 
 function showArticlePage() {
   landingPageEl.classList.add('hidden');
   articleViewEl.classList.remove('hidden');
+  articleListEl.classList.add('hidden');
+  sidebarSectionsEl.classList.remove('hidden');
+}
+
+function slugify(text) {
+  return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function createSectionItem(heading) {
+  const li = document.createElement('li');
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'section-link';
+  button.textContent = heading.text;
+  button.addEventListener('click', () => {
+    const el = document.getElementById(`section-${slugify(heading.text)}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  li.appendChild(button);
+  return li;
 }
 
 function renderSections(headings) {
   if (!headings || headings.length === 0) {
-    sectionsEl.classList.add('hidden');
+    sidebarSectionsEl.classList.add('hidden');
+    sectionListEl.innerHTML = '';
     return;
   }
 
-  sectionsEl.classList.remove('hidden');
+  sidebarSectionsEl.classList.remove('hidden');
   sectionListEl.innerHTML = '';
 
-  for (const h of headings) {
-    const li = document.createElement('li');
-    li.textContent = h.text;
-    li.style.paddingLeft = `${(h.level - 1) * 0.5 + 0.25}rem`;
-    li.addEventListener('click', () => {
-      const el = document.getElementById(`section-${h.text.toLowerCase().replace(/\s+/g, '-')}`);
-      el?.scrollIntoView({ behavior: 'smooth' });
-    });
-    sectionListEl.appendChild(li);
+  const root = sectionListEl;
+  const stack = [{ level: 0, list: root }];
+
+  for (const heading of headings) {
+    while (stack.length > 1 && heading.level <= stack[stack.length - 1].level) {
+      stack.pop();
+    }
+
+    const parent = stack[stack.length - 1];
+    const li = createSectionItem(heading);
+    parent.list.appendChild(li);
+
+    const nextHeading = headings[headings.indexOf(heading) + 1];
+    if (nextHeading && nextHeading.level > heading.level) {
+      const nested = document.createElement('ul');
+      li.appendChild(nested);
+      stack.push({ level: heading.level, list: nested });
+    }
   }
 }
 
@@ -263,7 +295,7 @@ async function loadArticle(slug) {
     articleMetaEl.textContent = '';
     tagChipsEl.innerHTML = '';
     articleBodyEl.innerHTML = '<p>We could not find that article.</p>';
-    sectionsEl.classList.add('hidden');
+    sidebarSectionsEl.classList.add('hidden');
     relatedRailEl.classList.add('hidden');
     showArticlePage();
     return;
@@ -279,7 +311,7 @@ async function loadArticle(slug) {
   articleBodyEl.innerHTML = currentArticle.html;
 
   articleBodyEl.querySelectorAll('h1, h2, h3').forEach(h => {
-    h.id = `section-${h.textContent.toLowerCase().replace(/\s+/g, '-')}`;
+    h.id = `section-${slugify(h.textContent)}`;
   });
 
   renderRelated(currentArticle.related);
