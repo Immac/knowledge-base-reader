@@ -15,17 +15,21 @@ function generateTagColor(key, value, isDark) {
   const h = Math.abs(keyHash) % 360;
   const valueMod = Math.abs(valueHash) % 30;
   
+  let s, l;
   if (isDark) {
-    // Dark theme: brighter, more saturated for visibility on dark bg
-    const s = 55 + (valueMod % 30); // 55-85%
-    const l = 45 + (valueMod % 25); // 45-70%
-    return `hsl(${h}, ${s}%, ${l}%)`;
+    // Dark theme: brighter for visibility on dark bg
+    s = 55 + (valueMod % 30); // 55-85%
+    l = 45 + (valueMod % 25); // 45-70%
   } else {
-    // Light theme: softer, less saturated for readability
-    const s = 35 + (valueMod % 35); // 35-70%
-    const l = 30 + (valueMod % 30); // 30-60%
-    return `hsl(${h}, ${s}%, ${l}%)`;
+    // Light theme: softer for readability
+    s = 35 + (valueMod % 35); // 35-70%
+    l = 30 + (valueMod % 30); // 30-60%
   }
+
+  // Calculate contrasting text color based on background lightness
+  const textColor = l > 55 ? '#1a1a1a' : '#ffffff';
+
+  return { bg: `hsl(${h}, ${s}%, ${l}%)`, text: textColor };
 }
 
 function isDarkStyle(style) {
@@ -79,7 +83,9 @@ function renderTagChips(container, tags, clickable = false) {
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
     chip.textContent = `${key}:${value}`;
-    chip.style.background = generateTagColor(key, value, dark);
+    const colors = generateTagColor(key, value, dark);
+    chip.style.background = colors.bg;
+    chip.style.color = colors.text;
 
     if (clickable) {
       chip.addEventListener('click', () => {
