@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { marked } from 'marked';
+import { rankRelatedArticles } from './relevance.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -109,27 +110,7 @@ export function getArticle(slug) {
   const headings = extractHeadings(bodyContent);
 
   const allArticles = listArticles();
-  const related = [];
-
-  for (const other of allArticles) {
-    if (other.slug === slug) continue;
-
-    const shared = [];
-    const articleTags = Object.entries(data.tags || {});
-    const otherTags = Object.entries(other.tags || {});
-
-    for (const [k1, v1] of articleTags) {
-      for (const [k2, v2] of otherTags) {
-        if (k1 === k2 && v1 === v2) {
-          shared.push({ key: k1, value: v1 });
-        }
-      }
-    }
-
-    if (shared.length > 0) {
-      related.push({ slug: other.slug, title: other.title, sharedTags: shared });
-    }
-  }
+  const related = rankRelatedArticles({ slug, tags: data.tags || {} }, allArticles.filter(other => other.slug !== slug));
 
   return {
     slug,
