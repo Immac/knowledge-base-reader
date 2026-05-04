@@ -1,26 +1,29 @@
 // Generate deterministic tag colors from tag text
 function generateTagColor(key, value, isDark) {
-  // Hash function that considers both key and value
-  let hash = 0;
+  // Split influence: key affects hue, value modifies saturation/lightness
+  let keyHash = 0;
   for (let i = 0; i < key.length; i++) {
-    hash = ((hash << 5) - hash) + key.charCodeAt(i) + (i + 1) * 7;
+    keyHash = ((keyHash << 5) - keyHash) + key.charCodeAt(i);
   }
+  
+  let valueHash = 0;
   for (let i = 0; i < value.length; i++) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(i) + (i + 1) * 13;
+    valueHash = ((valueHash << 5) - valueHash) + value.charCodeAt(i);
   }
-  hash = Math.abs(hash);
-
-  const h = hash % 360;
+  
+  // Key determines base hue, value adds variation
+  const h = Math.abs(keyHash) % 360;
+  const valueMod = Math.abs(valueHash) % 30;
   
   if (isDark) {
     // Dark theme: brighter, more saturated for visibility on dark bg
-    const s = 60 + (hash % 25); // 60-85%
-    const l = 50 + (hash % 20); // 50-70%
+    const s = 55 + (valueMod % 30); // 55-85%
+    const l = 45 + (valueMod % 25); // 45-70%
     return `hsl(${h}, ${s}%, ${l}%)`;
   } else {
     // Light theme: softer, less saturated for readability
-    const s = 40 + (hash % 30); // 40-70%
-    const l = 35 + (hash % 20); // 35-55%
+    const s = 35 + (valueMod % 35); // 35-70%
+    const l = 30 + (valueMod % 30); // 30-60%
     return `hsl(${h}, ${s}%, ${l}%)`;
   }
 }
