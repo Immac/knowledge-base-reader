@@ -30,28 +30,48 @@ function generateTagColor(key, value, isDark) {
   // Calculate shortest path around wheel (avoid going through 0/360 which is gray)
   let diff = endH - startH;
   if (Math.abs(diff) > 180) {
-    // If crossing center (gray), go the other way around
     if (diff > 0) {
       endH -= 360;
     } else {
       endH += 360;
     }
   }
-  const midH = startH + (endH - startH) * 0.5; // midpoint on shortest path
+  const midH = startH + (endH - startH) * 0.5;
 
   // Normalize all hue values to 0-360 for CSS
   const normalizeHue = h => ((h % 360) + 360) % 360;
   const gradient = `linear-gradient(90deg, hsl(${normalizeHue(startH)}, ${s}%, ${l}%) 0%, hsl(${normalizeHue(midH)}, ${s - 10}%, ${l + 5}%) 50%, hsl(${normalizeHue(endH)}, ${s}%, ${l}%) 100%)`;
 
-  // Always use white text on dark themes (guaranteed readable)
-  // Use dark text only on light themes
   const textColor = isDark ? '#ffffff' : '#1a1a1a';
-
   return { bg: gradient, text: textColor };
 }
 
-function isDarkStyle(style) {
-  return ['calm', 'violet', 'forest'].includes(style);
+function isDarkStyle(name) {
+  return ['calm', 'violet', 'forest'].includes(name);
+}
+
+function parseDateLike(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date(0) : date;
+}
+
+function daysAgo(value) {
+  const ms = Date.now() - parseDateLike(value).getTime();
+  return ms / (24 * 60 * 60 * 1000);
+}
+
+function articleBadgeMarkup(article) {
+  const age = daysAgo(article.modified);
+
+  if (age < 7) {
+    return `<span class="badge badge-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle></svg>New</span>`;
+  }
+
+  if (age < 30) {
+    return `<span class="badge badge-edited"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3"></path></svg>Edited</span>`;
+  }
+
+  return '';
 }
 
 // State
@@ -59,13 +79,16 @@ let articles = [];
 let currentArticle = null;
 let style = localStorage.getItem('kb-reader-style') || 'calm';
 let layout = localStorage.getItem('kb-reader-layout') || 'focus';
+let currentFilter = '';
 
 // DOM elements
 const filterInput = document.getElementById('filter');
 const articleListEl = document.getElementById('article-list');
-const overviewEl = document.getElementById('overview');
+const landingPageEl = document.getElementById('landing-page');
+const landingStatsEl = document.getElementById('landing-stats');
+const latestArticleCardsEl = document.getElementById('latest-article-cards');
+const allArticleCardsEl = document.getElementById('article-cards');
 const articleViewEl = document.getElementById('article-view');
-const articleCardsEl = document.getElementById('article-cards');
 const articleTitleEl = document.getElementById('article-title');
 const articleMetaEl = document.getElementById('article-meta');
 const tagChipsEl = document.getElementById('tag-chips');
@@ -80,6 +103,7 @@ const hamburgerEl = document.getElementById('hamburger');
 const settingsBtnEl = document.getElementById('settings-btn');
 const styleOptionsEl = document.getElementById('style-options');
 const layoutOptionsEl = document.getElementById('layout-options');
+const showAllBtnEl = document.getElementById('show-all-btn');
 
 function applyStyle() {
   document.documentElement.setAttribute('data-style', style);
@@ -94,10 +118,9 @@ function applyLayout() {
 
 function renderTagChips(container, tags, clickable = false) {
   container.innerHTML = '';
-  const tagEntries = Object.entries(tags);
   const dark = isDarkStyle(style);
 
-  for (const [key, value] of tagEntries) {
+  for (const [key, value] of Object.entries(tags || {})) {
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
     chip.textContent = `${key}:${value}`;
@@ -106,13 +129,39 @@ function renderTagChips(container, tags, clickable = false) {
     chip.style.color = colors.text;
 
     if (clickable) {
-      chip.addEventListener('click', () => {
+      chip.addEventListener('click', evt => {
+        evt.stopPropagation();
         filterInput.value = `${key}:${value}`;
+        currentFilter = filterInput.value;
         filterArticles();
+        showLandingPage();
       });
     }
 
     container.appendChild(chip);
+  }
+}
+
+function createArticleCard(article) {
+  const card = document.createElement('div');
+  card.className = 'article-card';
+  const badges = articleBadgeMarkup(article);
+  card.innerHTML = `
+    <h3>${article.title}</h3>
+    <p class="excerpt">${article.excerpt}</p>
+    <div class="badges">${badges}</div>
+    <div class="tag-chips"></div>
+  `;
+
+  renderTagChips(card.querySelector('.tag-chips'), article.tags, true);
+  card.addEventListener('click', () => navigateTo(article.slug));
+  return card;
+}
+
+function renderArticleCards(container, items) {
+  container.innerHTML = '';
+  for (const article of items) {
+    container.appendChild(createArticleCard(article));
   }
 }
 
@@ -126,41 +175,28 @@ function renderArticlesList(items) {
   }
 }
 
-function renderArticleCards(items) {
-  articleCardsEl.innerHTML = '';
-  const now = Date.now();
-  const DAY_MS = 24 * 60 * 60 * 1000;
-  
-  for (const article of items) {
-    const card = document.createElement('div');
-    card.className = 'article-card';
-    
-    const modified = new Date(article.modified).getTime();
-    const daysAgo = (now - modified) / DAY_MS;
-    const isNew = daysAgo < 7;
-    const isRecent = daysAgo < 30;
-    
-    let badges = '';
-    if (isNew) {
-      badges += `<span class="badge badge-new">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle></svg>
-        New
-      </span>`;
-    } else if (isRecent) {
-      badges += `<span class="badge badge-edited">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3"></path></svg>
-        Edited
-      </span>`;
-    }
-    
-    card.innerHTML = `<h3>${article.title}</h3><p class="excerpt">${article.excerpt}</p><div class="badges">${badges}</div><div class="tag-chips"></div>`;
+function renderLandingPage(items = articles) {
+  const sorted = [...items].sort((a, b) => parseDateLike(b.modified) - parseDateLike(a.modified));
+  const latest = sorted.slice(0, 6);
 
-    const chips = card.querySelector('.tag-chips');
-    renderTagChips(chips, article.tags, true);
+  landingStatsEl.innerHTML = `
+    <div class="landing-stat"><strong>${items.length}</strong><span>Articles</span></div>
+    <div class="landing-stat"><strong>${latest.length}</strong><span>Latest updates</span></div>
+    <div class="landing-stat"><strong>${Math.max(0, items.filter(a => daysAgo(a.modified) < 7).length)}</strong><span>New this week</span></div>
+  `;
 
-    card.addEventListener('click', () => navigateTo(article.slug));
-    articleCardsEl.appendChild(card);
-  }
+  renderArticleCards(latestArticleCardsEl, latest);
+  renderArticleCards(allArticleCardsEl, items);
+}
+
+function showLandingPage() {
+  landingPageEl.classList.remove('hidden');
+  articleViewEl.classList.add('hidden');
+}
+
+function showArticlePage() {
+  landingPageEl.classList.add('hidden');
+  articleViewEl.classList.remove('hidden');
 }
 
 function renderSections(headings) {
@@ -201,29 +237,21 @@ function renderRelated(related) {
   }
 }
 
-function renderTagFilterQuery(tag) {
-  filterInput.value = tag;
-  filterArticles();
-}
-
 function filterArticles() {
-  const query = filterInput.value.toLowerCase();
+  const query = currentFilter.trim().toLowerCase();
   let filtered = articles;
 
   if (query) {
     if (query.includes(':')) {
       const [key, value] = query.split(':');
-      filtered = articles.filter(a => {
-        const tags = Object.entries(a.tags);
-        return tags.some(([k, v]) => k.toLowerCase().includes(key) && v.toLowerCase().includes(value));
-      });
+      filtered = articles.filter(a => Object.entries(a.tags || {}).some(([k, v]) => k.toLowerCase().includes(key) && v.toLowerCase().includes(value)));
     } else {
-      filtered = articles.filter(a => a.title.toLowerCase().includes(query) || a.excerpt.toLowerCase().includes(query));
+      filtered = articles.filter(a => a.title.toLowerCase().includes(query) || a.slug.toLowerCase().includes(query) || (a.excerpt || '').toLowerCase().includes(query));
     }
   }
 
   renderArticlesList(filtered);
-  renderArticleCards(filtered);
+  renderLandingPage(filtered);
 }
 
 async function loadArticle(slug) {
@@ -231,20 +259,23 @@ async function loadArticle(slug) {
   const data = await res.json();
 
   if (!data.ok) {
-    articleViewEl.innerHTML = '<p>Article not found</p>';
+    articleTitleEl.textContent = 'Article not found';
+    articleMetaEl.textContent = '';
+    tagChipsEl.innerHTML = '';
+    articleBodyEl.innerHTML = '<p>We could not find that article.</p>';
+    sectionsEl.classList.add('hidden');
+    relatedRailEl.classList.add('hidden');
+    showArticlePage();
     return;
   }
 
   currentArticle = data.article;
-  overviewEl.classList.add('hidden');
-  articleViewEl.classList.remove('hidden');
+  showArticlePage();
 
   articleTitleEl.textContent = currentArticle.title;
   articleMetaEl.textContent = `Last modified: ${new Date(currentArticle.modified).toLocaleDateString()}`;
-
   renderTagChips(tagChipsEl, currentArticle.tags);
   renderSections(currentArticle.headings);
-
   articleBodyEl.innerHTML = currentArticle.html;
 
   articleBodyEl.querySelectorAll('h1, h2, h3').forEach(h => {
@@ -258,7 +289,7 @@ function navigateTo(slug) {
   window.location.hash = `/article/${slug}`;
 }
 
-function navigateToOverview() {
+function navigateToLanding() {
   window.location.hash = '';
 }
 
@@ -267,11 +298,13 @@ async function loadArticles() {
   const data = await res.json();
 
   if (!data.ok) {
-    articleCardsEl.innerHTML = '<p>No articles found</p>';
+    allArticleCardsEl.innerHTML = '<p>No articles found</p>';
+    latestArticleCardsEl.innerHTML = '<p>No articles found</p>';
     return;
   }
 
-  articles = data.articles;
+  articles = [...data.articles].sort((a, b) => parseDateLike(b.modified) - parseDateLike(a.modified));
+  currentFilter = filterInput.value;
   filterArticles();
 }
 
@@ -284,7 +317,17 @@ function setupEventListeners() {
     settingsPanelEl.classList.toggle('hidden');
   });
 
-  filterInput.addEventListener('input', filterArticles);
+  filterInput.addEventListener('input', () => {
+    currentFilter = filterInput.value;
+    filterArticles();
+  });
+
+  showAllBtnEl?.addEventListener('click', () => {
+    filterInput.value = '';
+    currentFilter = '';
+    filterArticles();
+    landingPageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   styleOptionsEl.addEventListener('click', e => {
     if (e.target.classList.contains('style-btn')) {
@@ -292,6 +335,8 @@ function setupEventListeners() {
       e.target.classList.add('active');
       style = e.target.dataset.style;
       applyStyle();
+      renderLandingPage();
+      if (currentArticle) loadArticle(currentArticle.slug);
     }
   });
 
@@ -307,12 +352,10 @@ function setupEventListeners() {
   window.addEventListener('hashchange', () => {
     const hash = window.location.hash.slice(1);
     if (hash.startsWith('/article/')) {
-      const slug = hash.slice(9);
-      loadArticle(slug);
+      loadArticle(hash.slice(9));
     } else {
       currentArticle = null;
-      overviewEl.classList.remove('hidden');
-      articleViewEl.classList.add('hidden');
+      showLandingPage();
     }
   });
 }
@@ -329,8 +372,9 @@ function init() {
 
   const hash = window.location.hash.slice(1);
   if (hash.startsWith('/article/')) {
-    const slug = hash.slice(9);
-    loadArticle(slug);
+    loadArticle(hash.slice(9));
+  } else {
+    showLandingPage();
   }
 }
 

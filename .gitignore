@@ -1,10 +1,8 @@
-{
-  "node_modules/": true,
-  "dist/": true,
-  ".build/": true,
-  "*.log": true,
-  ".env": true,
-  ".env.local": true,
-  ".DS_Store": true,
-  ".debugging/": true
-}
+node_modules/
+dist/
+.build/
+*.log
+.env
+.env.local
+.DS_Store
+.debugging/

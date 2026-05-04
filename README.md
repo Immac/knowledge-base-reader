@@ -21,7 +21,8 @@ The app auto-discovers articles from:
 
 ## Usage
 
-- **Browse articles** - Click any article card or sidebar link
+- **Browse articles** - The landing page shows latest changes and all articles
+- **Badges** - New items and recently edited items are marked on cards
 - **Filter** - Type in the filter box to search by title, slug, or tag (e.g., `language:javascript`)
 - **Navigate** - Articles support hash-based URLs (`/#/article/my-slug`)
 - **Style** - Choose from Calm, Violet, Forest, Warm, or Mint themes

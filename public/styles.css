@@ -243,9 +243,86 @@ body {
   padding: 1.5rem;
 }
 
-.article-cards {
+.landing-page {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+}
+
+.landing-hero {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+}
+
+.landing-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.landing-hero h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.landing-hero p {
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+.landing-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.landing-stat {
+  min-width: 120px;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+}
+
+.landing-stat strong {
+  display: block;
+  font-size: 1.4rem;
+}
+
+.landing-stat span {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.landing-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+
+.article-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
 
@@ -256,6 +333,9 @@ body {
   padding: 1rem;
   cursor: pointer;
   transition: border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .article-card:hover {

@@ -34,9 +34,27 @@
       </nav>
 
       <main class="content" id="content">
-        <div class="overview" id="overview">
-          <div class="article-cards" id="article-cards"></div>
-        </div>
+        <section class="landing-page" id="landing-page">
+          <header class="landing-hero">
+            <p class="landing-label">Latest changes</p>
+            <h2>Knowledge Base Reader</h2>
+            <p>Browse the most recently updated articles first. New items and recent edits are marked directly on the cards.</p>
+            <div class="landing-stats" id="landing-stats"></div>
+          </header>
+
+          <section class="landing-section">
+            <div class="section-heading">
+              <h3>Newest updates</h3>
+              <button class="text-btn" id="show-all-btn" type="button">Show all</button>
+            </div>
+            <div class="article-cards" id="latest-article-cards"></div>
+          </section>
+
+          <section class="landing-section">
+            <h3>All articles</h3>
+            <div class="article-cards" id="article-cards"></div>
+          </section>
+        </section>
 
         <article class="article-view hidden" id="article-view">
           <header class="article-header">
