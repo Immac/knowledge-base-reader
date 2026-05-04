@@ -274,7 +274,8 @@ function renderRelated(related) {
     const tags = document.createElement('div');
     tags.className = 'related-tags';
 
-    const visibleTags = (r.sharedTags || []).slice(0, 3);
+    const matchedTags = r.matchedTags || r.sharedTags || [];
+    const visibleTags = matchedTags.slice(0, 3);
     for (const tag of visibleTags) {
       const small = document.createElement('span');
       small.className = 'related-tag';
@@ -282,7 +283,7 @@ function renderRelated(related) {
       tags.appendChild(small);
     }
 
-    const extraCount = (r.sharedTags || []).length - visibleTags.length;
+    const extraCount = matchedTags.length - visibleTags.length;
     if (extraCount > 0) {
       const more = document.createElement('span');
       more.className = 'related-tag related-tag-more';

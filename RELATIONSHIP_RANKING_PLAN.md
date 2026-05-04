@@ -144,5 +144,11 @@ For the related rail:
 - Should heuristic scores be normalized by article tag count?
 - Should the UI show the score to users or keep it internal?
 
+## Implementation Status
+- Phase 1 is implemented: tag relevance scoring, ranking, normalization, and debug-only aspect logging live in `src/relevance.mjs` and `src/data-source.mjs`.
+- Phase 2 is implemented: the related rail consumes ranked matches and renders small shared tag pills with overflow counts.
+- Phase 3 remains future work if the UI needs stronger explainability or score surfacing.
+- Phase 4 remains future work for the separate RAG ranking layer.
+
 ## Recommended Next Step
-Implement the tag-only scoring helper first, then wire ranking into the related rail, and only after that consider the separate RAG system.
+If generated tags are introduced later, merge them into the same tag heuristic without feeding title or body text into that layer.
