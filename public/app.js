@@ -261,6 +261,7 @@ function renderRelated(related) {
       return true;
     })
     .sort((a, b) => {
+      if ((b.relevancePercent || 0) !== (a.relevancePercent || 0)) return (b.relevancePercent || 0) - (a.relevancePercent || 0);
       if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
       const aCount = (a.matchedTags || a.sharedTags || []).length;
       const bCount = (b.matchedTags || b.sharedTags || []).length;

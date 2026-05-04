@@ -67,25 +67,38 @@ function scoreArticleRelevanceImpl(articleTags, candidateTags) {
   const matchedTags = [];
   const matchedKeys = new Set();
   let score = 0;
-  const maxScore = candidateIndex.entries.length * 10;
+  let exactMatchCount = 0;
+  let partialMatchCount = 0;
 
   for (const candidate of candidateIndex.entries) {
     const signature = `${candidate.key}\u0000${candidate.value}`;
     if (articleIndex.bySignature.has(signature)) {
       matchedTags.push({ key: candidate.rawKey, value: candidate.rawValue });
       score += 10;
+      exactMatchCount += 1;
       continue;
     }
 
     if (articleIndex.byKey.has(candidate.key)) {
       matchedKeys.add(candidate.rawKey);
       score += 2;
+      partialMatchCount += 1;
     }
   }
 
+  const articleTagCount = articleIndex.entries.length;
+  const candidateTagCount = candidateIndex.entries.length;
+  const exactPrecision = candidateTagCount > 0 ? exactMatchCount / candidateTagCount : 0;
+  const exactRecall = articleTagCount > 0 ? exactMatchCount / articleTagCount : 0;
+  const partialPrecision = candidateTagCount > 0 ? partialMatchCount / candidateTagCount : 0;
+  const partialRecall = articleTagCount > 0 ? partialMatchCount / articleTagCount : 0;
+  const exactF1 = exactMatchCount > 0 ? (2 * exactPrecision * exactRecall) / (exactPrecision + exactRecall) : 0;
+  const partialF1 = partialMatchCount > 0 ? (2 * partialPrecision * partialRecall) / (partialPrecision + partialRecall) : 0;
+  const relevancePercent = Math.round(Math.max(0, Math.min(100, (exactF1 * 85) + (partialF1 * 15))));
+
   return {
     score,
-    relevancePercent: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0,
+    relevancePercent,
     matchedTags,
     matchedKeys: [...matchedKeys],
   };
@@ -117,6 +130,7 @@ function rankRelatedArticlesImpl(article, candidates) {
     })
     .filter(item => item.matchedTags.length > 0)
     .sort((a, b) => {
+      if ((b.relevancePercent || 0) !== (a.relevancePercent || 0)) return (b.relevancePercent || 0) - (a.relevancePercent || 0);
       if (b.score !== a.score) return b.score - a.score;
       if (b.matchedTags.length !== a.matchedTags.length) return b.matchedTags.length - a.matchedTags.length;
       return a.title.localeCompare(b.title) || a.slug.localeCompare(b.slug);
