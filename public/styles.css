@@ -515,7 +515,7 @@ body {
 .settings-panel {
   position: fixed;
   right: 0;
-  top: 0;
+  top: 3.5rem;
   bottom: 0;
   width: 280px;
   background: var(--bg-secondary);
