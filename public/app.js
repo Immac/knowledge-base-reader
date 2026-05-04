@@ -253,7 +253,22 @@ function renderSections(headings) {
 }
 
 function renderRelated(related) {
-  if (!related || related.length === 0) {
+  const items = [...(related || [])]
+    .filter(r => {
+      if (!currentArticle) return true;
+      if (currentArticle.slug && r.slug === currentArticle.slug) return false;
+      if (currentArticle.title && r.title === currentArticle.title) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+      const aCount = (a.matchedTags || a.sharedTags || []).length;
+      const bCount = (b.matchedTags || b.sharedTags || []).length;
+      if (bCount !== aCount) return bCount - aCount;
+      return (a.title || '').localeCompare(b.title || '') || (a.slug || '').localeCompare(b.slug || '');
+    });
+
+  if (items.length === 0) {
     relatedRailEl.classList.add('hidden');
     return;
   }
@@ -261,7 +276,7 @@ function renderRelated(related) {
   relatedRailEl.classList.remove('hidden');
   relatedListEl.innerHTML = '';
 
-  for (const r of related) {
+  for (const r of items) {
     const li = document.createElement('li');
     li.className = 'related-item';
 

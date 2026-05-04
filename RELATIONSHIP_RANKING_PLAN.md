@@ -126,6 +126,7 @@ rankRelatedArticles(article, candidates) -> [
 ## UI Behavior
 For the related rail:
 - show related articles sorted by heuristic score
+- defensively exclude the current article if it appears in the returned data
 - show only a few matched tags per item
 - show a `+N` overflow counter when there are more matched tags than can be displayed
 - keep the UI compact and readable

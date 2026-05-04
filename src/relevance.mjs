@@ -89,8 +89,19 @@ function scoreArticleRelevanceImpl(articleTags, candidateTags) {
   };
 }
 
+function isSameArticle(article, candidate) {
+  if (!article || !candidate) return false;
+  const articleTitle = normalizeToken(article.title);
+  const candidateTitle = normalizeToken(candidate.title);
+  return Boolean(
+    (article.slug && candidate.slug && candidate.slug === article.slug) ||
+    (articleTitle && candidateTitle && candidateTitle === articleTitle)
+  );
+}
+
 function rankRelatedArticlesImpl(article, candidates) {
   const ranked = candidates
+    .filter(candidate => !isSameArticle(article, candidate))
     .map(candidate => {
       const result = scoreArticleRelevanceImpl(article?.tags || {}, candidate?.tags || {});
       return {
