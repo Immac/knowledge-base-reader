@@ -323,6 +323,9 @@ function renderRelated(related) {
     title.textContent = r.title;
     title.addEventListener('click', () => navigateTo(r.slug));
 
+    const titleRow = document.createElement('div');
+    titleRow.className = 'related-title-row';
+
     const tags = document.createElement('div');
     tags.className = 'related-tags';
 
@@ -345,9 +348,10 @@ function renderRelated(related) {
 
     const percent = r.relevancePercent || 0;
     const matchLevel = percent >= 80 ? 4 : percent >= 66 ? 3 : percent >= 44 ? 2 : 1;
-    tags.appendChild(createMatchIcon(matchLevel));
+    titleRow.appendChild(title);
+    titleRow.appendChild(createMatchIcon(matchLevel));
 
-    li.appendChild(title);
+    li.appendChild(titleRow);
     li.appendChild(tags);
     relatedListEl.appendChild(li);
   }
