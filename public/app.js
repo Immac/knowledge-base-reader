@@ -252,6 +252,42 @@ function renderSections(headings) {
   }
 }
 
+function createMatchIcon(level) {
+  const icon = document.createElement('span');
+  icon.className = 'related-match';
+  const clamped = Math.max(1, Math.min(4, level || 0));
+  icon.setAttribute('role', 'img');
+  icon.setAttribute('aria-label', `Match strength ${clamped} of 4`);
+  icon.title = `Match strength ${clamped} of 4`;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 20 12');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+
+  const bars = [
+    { x: 1, y: 7, w: 3, h: 4 },
+    { x: 6, y: 5, w: 3, h: 6 },
+    { x: 11, y: 3, w: 3, h: 8 },
+    { x: 16, y: 1, w: 3, h: 10 },
+  ];
+
+  bars.forEach((bar, index) => {
+    const rect = document.createElementNS(svgNS, 'rect');
+    rect.setAttribute('x', bar.x);
+    rect.setAttribute('y', bar.y);
+    rect.setAttribute('width', bar.w);
+    rect.setAttribute('height', bar.h);
+    rect.setAttribute('rx', '1');
+    rect.setAttribute('class', `related-match-bar${index < clamped ? ' active' : ''}`);
+    svg.appendChild(rect);
+  });
+
+  icon.appendChild(svg);
+  return icon;
+}
+
 function renderRelated(related) {
   const items = [...(related || [])]
     .filter(r => {
@@ -307,12 +343,9 @@ function renderRelated(related) {
       tags.appendChild(more);
     }
 
-    if (typeof r.relevancePercent === 'number') {
-      const relevance = document.createElement('span');
-      relevance.className = 'related-relevance';
-      relevance.textContent = `${r.relevancePercent}% relevance`;
-      tags.appendChild(relevance);
-    }
+    const percent = r.relevancePercent || 0;
+    const matchLevel = percent >= 80 ? 4 : percent >= 66 ? 3 : percent >= 44 ? 2 : 1;
+    tags.appendChild(createMatchIcon(matchLevel));
 
     li.appendChild(title);
     li.appendChild(tags);
