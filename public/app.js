@@ -5,16 +5,17 @@ function generateTagColor(key, value, isDark) {
   for (let i = 0; i < key.length; i++) {
     keyHash = ((keyHash << 5) - keyHash) + key.charCodeAt(i);
   }
-  
+
   let valueHash = 0;
   for (let i = 0; i < value.length; i++) {
     valueHash = ((valueHash << 5) - valueHash) + value.charCodeAt(i);
   }
-  
-  // Key determines base hue, value adds variation
-  const h = Math.abs(keyHash) % 360;
+
+  // Key determines start hue, value determines end hue with gradient fade in middle
+  const startH = Math.abs(keyHash) % 360;
+  const endH = Math.abs(valueHash) % 360;
   const valueMod = Math.abs(valueHash) % 30;
-  
+
   let s, l;
   if (isDark) {
     // Dark theme: brighter for visibility on dark bg
@@ -26,10 +27,15 @@ function generateTagColor(key, value, isDark) {
     l = 30 + (valueMod % 30); // 30-60%
   }
 
-  // Calculate contrasting text color based on background lightness
-  const textColor = l > 55 ? '#1a1a1a' : '#ffffff';
 
-  return { bg: `hsl(${h}, ${s}%, ${l}%)`, text: textColor };
+  // Gradient: key color on left, value color on right, blended in middle
+  const gradient = `linear-gradient(90deg, hsl(${startH}, ${s}%, ${l}%) 0%, hsl(${startH}, ${s - 10}%, ${l + 5}%) 50%, hsl(${endH}, ${s}%, ${l}%) 100%)`;
+
+  // Calculate contrasting text color based on average lightness
+  const avgL = l + 2.5;
+  const textColor = avgL > 55 ? '#1a1a1a' : '#ffffff';
+
+  return { bg: gradient, text: textColor };
 }
 
 function isDarkStyle(style) {
