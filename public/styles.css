@@ -642,15 +642,11 @@ body {
   border-radius: 10px;
 }
 
-.related-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.45rem;
-}
-
 .related-title {
-  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
   min-width: 0;
   text-align: left;
   background: none;
@@ -660,6 +656,7 @@ body {
   font: inherit;
   font-weight: 600;
   padding: 0;
+  margin-bottom: 0.45rem;
 }
 
 .related-title:hover {
