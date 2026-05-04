@@ -396,6 +396,9 @@ function init() {
   applyStyle();
   applyLayout();
 
+  styleOptionsEl.querySelectorAll('.style-btn').forEach(button => button.classList.remove('active'));
+  layoutOptionsEl.querySelectorAll('.layout-btn').forEach(button => button.classList.remove('active'));
+
   styleOptionsEl.querySelector(`[data-style="${style}"]`)?.classList.add('active');
   layoutOptionsEl.querySelector(`[data-layout="${layout}"]`)?.classList.add('active');
 
