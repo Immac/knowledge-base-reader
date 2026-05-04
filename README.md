@@ -2,6 +2,8 @@
 
 A wiki-style browser for the knowledge base, built as a pi extension companion.
 
+Repository: git@github.com:Immac/knowledge-base-reader.git
+
 ## Quick Start
 
 ```bash
