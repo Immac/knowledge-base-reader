@@ -54,6 +54,25 @@ export function listArticles() {
   return articles;
 }
 
+function stripLeadingHeading(content) {
+  const lines = content.split('\n');
+  let index = 0;
+
+  while (index < lines.length && lines[index].trim() === '') {
+    index += 1;
+  }
+
+  if (index < lines.length && /^#\s+/.test(lines[index])) {
+    lines.splice(index, 1);
+
+    while (index < lines.length && lines[index].trim() === '') {
+      lines.splice(index, 1);
+    }
+  }
+
+  return lines.join('\n').trimStart();
+}
+
 function extractHeadings(content) {
   const headings = [];
   const lines = content.split('\n');
@@ -85,8 +104,9 @@ export function getArticle(slug) {
   const data = parsed.data;
   const content = parsed.content;
 
-  const html = marked.parse(content);
-  const headings = extractHeadings(content);
+  const bodyContent = stripLeadingHeading(content);
+  const html = marked.parse(bodyContent);
+  const headings = extractHeadings(bodyContent);
 
   const allArticles = listArticles();
   const related = [];
