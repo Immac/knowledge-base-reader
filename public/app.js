@@ -168,6 +168,16 @@ let tagGraph = null;
 let style = getStoredValue('kb-reader-style', 'dark');
 let layout = getStoredValue('kb-reader-layout', 'dashboard');
 let currentFilter = '';
+let graphState = {
+  width: 1200,
+  height: 800,
+  scale: 1,
+  translateX: 0,
+  translateY: 0,
+  minScale: 0.35,
+  maxScale: 2.5,
+  mounted: false,
+};
 
 // DOM elements
 const filterInput = document.getElementById('filter');
@@ -179,6 +189,15 @@ const allArticleCardsEl = document.getElementById('article-cards');
 const graphPageEl = document.getElementById('graph-page');
 const graphStatsEl = document.getElementById('graph-stats');
 const graphSvgEl = document.getElementById('graph-svg');
+const graphCanvasWrapEl = document.getElementById('graph-canvas-wrap');
+const graphPanUpEl = document.getElementById('graph-pan-up');
+const graphPanLeftEl = document.getElementById('graph-pan-left');
+const graphPanDownEl = document.getElementById('graph-pan-down');
+const graphPanRightEl = document.getElementById('graph-pan-right');
+const graphZoomInEl = document.getElementById('graph-zoom-in');
+const graphZoomOutEl = document.getElementById('graph-zoom-out');
+const graphZoomResetEl = document.getElementById('graph-zoom-reset');
+const graphZoomFitEl = document.getElementById('graph-zoom-fit');
 const articleViewEl = document.getElementById('article-view');
 const articleTitleEl = document.getElementById('article-title');
 const articleMetaEl = document.getElementById('article-meta');
@@ -297,6 +316,7 @@ function showGraphPage() {
   sidebarEl.classList.add('hidden');
   graphPageEl.classList.remove('hidden');
   setGraphButtonActive(true);
+  requestAnimationFrame(() => fitGraphToView());
 }
 
 function showLandingPage() {
@@ -368,8 +388,79 @@ function renderSections(headings) {
   }
 }
 
+function applyGraphTransform() {
+  if (!graphSvgEl) return;
+  graphSvgEl.setAttribute('viewBox', `0 0 ${graphState.width} ${graphState.height}`);
+  const graphContent = graphSvgEl.querySelector('#graph-content');
+  if (graphContent) {
+    graphContent.setAttribute('transform', `translate(${graphState.translateX} ${graphState.translateY}) scale(${graphState.scale})`);
+  }
+}
+
+function graphPointFromEvent(event) {
+  const rect = graphSvgEl.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  };
+}
+
+function clampGraphScale(value) {
+  return Math.max(graphState.minScale, Math.min(graphState.maxScale, value));
+}
+
+function fitGraphToView() {
+  if (!graphCanvasWrapEl || !graphState.width || !graphState.height) return;
+  const rect = graphCanvasWrapEl.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return;
+  const padding = 48;
+  const scaleX = (rect.width - padding * 2) / graphState.width;
+  const scaleY = (rect.height - padding * 2) / graphState.height;
+  const scale = clampGraphScale(Math.min(scaleX, scaleY));
+  graphState.scale = scale;
+  graphState.translateX = (rect.width - graphState.width * scale) / 2;
+  graphState.translateY = (rect.height - graphState.height * scale) / 2;
+  applyGraphTransform();
+}
+
+function resetGraphView() {
+  graphState.scale = 1;
+  graphState.translateX = 0;
+  graphState.translateY = 0;
+  applyGraphTransform();
+}
+
+function zoomGraph(delta, anchor = null) {
+  const nextScale = clampGraphScale(graphState.scale * delta);
+  if (!graphSvgEl) return;
+
+  if (anchor) {
+    const beforeX = (anchor.x - graphState.translateX) / graphState.scale;
+    const beforeY = (anchor.y - graphState.translateY) / graphState.scale;
+    graphState.scale = nextScale;
+    graphState.translateX = anchor.x - beforeX * nextScale;
+    graphState.translateY = anchor.y - beforeY * nextScale;
+  } else {
+    graphState.scale = nextScale;
+  }
+
+  applyGraphTransform();
+}
+
+function panGraph(dx, dy) {
+  graphState.translateX += dx;
+  graphState.translateY += dy;
+  applyGraphTransform();
+}
+
 function renderGraph(graph) {
   if (!graph || !graphSvgEl || !graphStatsEl) return;
+
+  graphState.width = graph.width || 1200;
+  graphState.height = graph.height || 800;
+  graphState.scale = 1;
+  graphState.translateX = 0;
+  graphState.translateY = 0;
 
   graphStatsEl.innerHTML = `
     <div class="graph-stat"><strong>${graph.nodeCount}</strong><span>Tags</span></div>
@@ -377,9 +468,7 @@ function renderGraph(graph) {
     <div class="graph-stat"><strong>${graph.layers?.length || 0}</strong><span>Layers</span></div>
   `;
 
-  const width = graph.width || 1200;
-  const height = graph.height || 800;
-  graphSvgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  graphSvgEl.setAttribute('viewBox', `0 0 ${graphState.width} ${graphState.height}`);
   graphSvgEl.innerHTML = '';
 
   const svgNS = 'http://www.w3.org/2000/svg';
@@ -392,12 +481,17 @@ function renderGraph(graph) {
   `;
   graphSvgEl.appendChild(defs);
 
+  const content = document.createElementNS(svgNS, 'g');
+  content.setAttribute('id', 'graph-content');
+  content.setAttribute('transform', 'translate(0 0) scale(1)');
+  graphSvgEl.appendChild(content);
+
   for (const edge of graph.edges || []) {
     const path = document.createElementNS(svgNS, 'path');
     path.setAttribute('d', edge.path);
     path.setAttribute('class', 'graph-edge');
     path.setAttribute('marker-end', 'url(#graph-arrow)');
-    graphSvgEl.appendChild(path);
+    content.appendChild(path);
   }
 
   for (const node of graph.nodes || []) {
@@ -426,8 +520,12 @@ function renderGraph(graph) {
     meta.textContent = `${node.count} article${node.count === 1 ? '' : 's'}`;
     group.appendChild(meta);
 
-    graphSvgEl.appendChild(group);
+    content.appendChild(group);
   }
+
+  graphState.mounted = true;
+  applyGraphTransform();
+  fitGraphToView();
 }
 
 async function loadTagGraph() {
@@ -625,6 +723,57 @@ async function loadArticles() {
   filterArticles();
 }
 
+function setupGraphInteractions() {
+  if (!graphSvgEl || !graphCanvasWrapEl) return;
+
+  let isDragging = false;
+  let lastPoint = null;
+
+  graphCanvasWrapEl.addEventListener('wheel', event => {
+    if (!graphState.mounted) return;
+    event.preventDefault();
+    const direction = event.deltaY > 0 ? 0.92 : 1.08;
+    zoomGraph(direction, graphPointFromEvent(event));
+  }, { passive: false });
+
+  graphCanvasWrapEl.addEventListener('pointerdown', event => {
+    if (!graphState.mounted) return;
+    isDragging = true;
+    lastPoint = { x: event.clientX, y: event.clientY };
+    graphCanvasWrapEl.classList.add('dragging');
+    graphCanvasWrapEl.setPointerCapture(event.pointerId);
+  });
+
+  graphCanvasWrapEl.addEventListener('pointermove', event => {
+    if (!isDragging || !lastPoint) return;
+    const dx = event.clientX - lastPoint.x;
+    const dy = event.clientY - lastPoint.y;
+    lastPoint = { x: event.clientX, y: event.clientY };
+    panGraph(dx, dy);
+  });
+
+  const stopDragging = event => {
+    if (!isDragging) return;
+    isDragging = false;
+    lastPoint = null;
+    graphCanvasWrapEl.classList.remove('dragging');
+    try { graphCanvasWrapEl.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+  };
+
+  graphCanvasWrapEl.addEventListener('pointerup', stopDragging);
+  graphCanvasWrapEl.addEventListener('pointercancel', stopDragging);
+  graphCanvasWrapEl.addEventListener('pointerleave', stopDragging);
+
+  graphPanUpEl?.addEventListener('click', () => panGraph(0, 48));
+  graphPanLeftEl?.addEventListener('click', () => panGraph(48, 0));
+  graphPanDownEl?.addEventListener('click', () => panGraph(0, -48));
+  graphPanRightEl?.addEventListener('click', () => panGraph(-48, 0));
+  graphZoomInEl?.addEventListener('click', () => zoomGraph(1.2));
+  graphZoomOutEl?.addEventListener('click', () => zoomGraph(1 / 1.2));
+  graphZoomResetEl?.addEventListener('click', () => resetGraphView());
+  graphZoomFitEl?.addEventListener('click', () => fitGraphToView());
+}
+
 function setupEventListeners() {
   hamburgerEl.addEventListener('click', () => {
     sidebarEl.classList.toggle('hidden');
@@ -696,6 +845,7 @@ function init() {
   layoutOptionsEl.querySelector(`[data-layout="${layout}"]`)?.classList.add('active');
 
   setupEventListeners();
+  setupGraphInteractions();
   loadArticles();
   loadTagGraph();
 

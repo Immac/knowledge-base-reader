@@ -55,7 +55,23 @@
             <div class="graph-stats" id="graph-stats"></div>
           </header>
           <section class="graph-canvas-card">
-            <div class="graph-canvas-wrap">
+            <div class="graph-toolbar" aria-label="Graph controls">
+              <div class="graph-control-group" aria-label="Pan graph">
+                <button class="graph-control-btn" id="graph-pan-up" type="button" aria-label="Pan up">↑</button>
+                <div class="graph-control-row">
+                  <button class="graph-control-btn" id="graph-pan-left" type="button" aria-label="Pan left">←</button>
+                  <button class="graph-control-btn" id="graph-pan-down" type="button" aria-label="Pan down">↓</button>
+                  <button class="graph-control-btn" id="graph-pan-right" type="button" aria-label="Pan right">→</button>
+                </div>
+              </div>
+              <div class="graph-control-group" aria-label="Zoom graph">
+                <button class="graph-control-btn" id="graph-zoom-out" type="button" aria-label="Zoom out">−</button>
+                <button class="graph-control-btn" id="graph-zoom-reset" type="button" aria-label="Reset graph view">Reset</button>
+                <button class="graph-control-btn" id="graph-zoom-fit" type="button" aria-label="Fit graph to view">Fit</button>
+                <button class="graph-control-btn" id="graph-zoom-in" type="button" aria-label="Zoom in">+</button>
+              </div>
+            </div>
+            <div class="graph-canvas-wrap" id="graph-canvas-wrap">
               <svg class="graph-svg" id="graph-svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet"></svg>
             </div>
           </section>
