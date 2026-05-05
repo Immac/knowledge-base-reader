@@ -2,6 +2,22 @@ function normalizeToken(value) {
   return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+function getStoredValue(key, fallback) {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function setStoredValue(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // ignore storage access failures in restricted contexts
+  }
+}
+
 function normalizeTagCollection(tags) {
   const input = Array.isArray(tags) ? tags : Object.entries(tags || {});
   const result = [];
@@ -148,8 +164,9 @@ function articleBadgeMarkup(article) {
 // State
 let articles = [];
 let currentArticle = null;
-let style = localStorage.getItem('kb-reader-style') || 'dark';
-let layout = localStorage.getItem('kb-reader-layout') || 'dashboard';
+let tagGraph = null;
+let style = getStoredValue('kb-reader-style', 'dark');
+let layout = getStoredValue('kb-reader-layout', 'dashboard');
 let currentFilter = '';
 
 // DOM elements
@@ -159,6 +176,9 @@ const landingPageEl = document.getElementById('landing-page');
 const landingStatsEl = document.getElementById('landing-stats');
 const latestArticleCardsEl = document.getElementById('latest-article-cards');
 const allArticleCardsEl = document.getElementById('article-cards');
+const graphPageEl = document.getElementById('graph-page');
+const graphStatsEl = document.getElementById('graph-stats');
+const graphSvgEl = document.getElementById('graph-svg');
 const articleViewEl = document.getElementById('article-view');
 const articleTitleEl = document.getElementById('article-title');
 const articleMetaEl = document.getElementById('article-meta');
@@ -171,6 +191,7 @@ const relatedListEl = document.getElementById('related-list');
 const sidebarEl = document.getElementById('sidebar');
 const settingsPanelEl = document.getElementById('settings-panel');
 const hamburgerEl = document.getElementById('hamburger');
+const graphBtnEl = document.getElementById('graph-btn');
 const settingsBtnEl = document.getElementById('settings-btn');
 const styleOptionsEl = document.getElementById('style-options');
 const layoutOptionsEl = document.getElementById('layout-options');
@@ -178,13 +199,13 @@ const showAllBtnEl = document.getElementById('show-all-btn');
 
 function applyStyle() {
   document.documentElement.setAttribute('data-style', style);
-  localStorage.setItem('kb-reader-style', style);
+  setStoredValue('kb-reader-style', style);
 }
 
 function applyLayout() {
   document.documentElement.classList.remove('layout-focus', 'layout-cards', 'layout-magazine', 'layout-notebook', 'layout-dashboard');
   document.documentElement.classList.add(`layout-${layout}`);
-  localStorage.setItem('kb-reader-layout', layout);
+  setStoredValue('kb-reader-layout', layout);
 }
 
 function renderTagChips(container, tags, clickable = false) {
@@ -260,18 +281,42 @@ function renderLandingPage(items = articles) {
   renderArticleCards(allArticleCardsEl, items);
 }
 
+function setGraphButtonActive(active) {
+  graphBtnEl.classList.toggle('active', active);
+}
+
+function hideGraphPage() {
+  graphPageEl.classList.add('hidden');
+}
+
+function showGraphPage() {
+  landingPageEl.classList.add('hidden');
+  articleViewEl.classList.add('hidden');
+  articleListEl.classList.add('hidden');
+  sidebarSectionsEl.classList.add('hidden');
+  sidebarEl.classList.add('hidden');
+  graphPageEl.classList.remove('hidden');
+  setGraphButtonActive(true);
+}
+
 function showLandingPage() {
+  hideGraphPage();
+  setGraphButtonActive(false);
   landingPageEl.classList.remove('hidden');
   articleViewEl.classList.add('hidden');
   articleListEl.classList.remove('hidden');
   sidebarSectionsEl.classList.add('hidden');
+  sidebarEl.classList.remove('hidden');
 }
 
 function showArticlePage() {
+  hideGraphPage();
+  setGraphButtonActive(false);
   landingPageEl.classList.add('hidden');
   articleViewEl.classList.remove('hidden');
   articleListEl.classList.add('hidden');
   sidebarSectionsEl.classList.remove('hidden');
+  sidebarEl.classList.remove('hidden');
 }
 
 function slugify(text) {
@@ -320,6 +365,83 @@ function renderSections(headings) {
       li.appendChild(nested);
       stack.push({ level: heading.level, list: nested });
     }
+  }
+}
+
+function renderGraph(graph) {
+  if (!graph || !graphSvgEl || !graphStatsEl) return;
+
+  graphStatsEl.innerHTML = `
+    <div class="graph-stat"><strong>${graph.nodeCount}</strong><span>Tags</span></div>
+    <div class="graph-stat"><strong>${graph.edgeCount}</strong><span>Edges</span></div>
+    <div class="graph-stat"><strong>${graph.layers?.length || 0}</strong><span>Layers</span></div>
+  `;
+
+  const width = graph.width || 1200;
+  const height = graph.height || 800;
+  graphSvgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  graphSvgEl.innerHTML = '';
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+
+  const defs = document.createElementNS(svgNS, 'defs');
+  defs.innerHTML = `
+    <marker id="graph-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+    </marker>
+  `;
+  graphSvgEl.appendChild(defs);
+
+  for (const edge of graph.edges || []) {
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', edge.path);
+    path.setAttribute('class', 'graph-edge');
+    path.setAttribute('marker-end', 'url(#graph-arrow)');
+    graphSvgEl.appendChild(path);
+  }
+
+  for (const node of graph.nodes || []) {
+    const group = document.createElementNS(svgNS, 'g');
+    group.setAttribute('class', 'graph-node');
+    group.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+
+    const rect = document.createElementNS(svgNS, 'rect');
+    rect.setAttribute('width', node.width);
+    rect.setAttribute('height', node.height);
+    rect.setAttribute('rx', '14');
+    rect.setAttribute('class', 'graph-node-box');
+    group.appendChild(rect);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', '16');
+    label.setAttribute('y', '24');
+    label.setAttribute('class', 'graph-node-label');
+    label.textContent = node.label;
+    group.appendChild(label);
+
+    const meta = document.createElementNS(svgNS, 'text');
+    meta.setAttribute('x', '16');
+    meta.setAttribute('y', '42');
+    meta.setAttribute('class', 'graph-node-meta');
+    meta.textContent = `${node.count} article${node.count === 1 ? '' : 's'}`;
+    group.appendChild(meta);
+
+    graphSvgEl.appendChild(group);
+  }
+}
+
+async function loadTagGraph() {
+  try {
+    const res = await fetch('/api/tags/graph');
+    const data = await res.json();
+    if (data.ok) {
+      tagGraph = data.graph;
+      renderGraph(tagGraph);
+    } else {
+      graphStatsEl.innerHTML = '<div class="graph-stat"><strong>Unavailable</strong><span>Graph</span></div>';
+    }
+  } catch {
+    graphStatsEl.innerHTML = '<div class="graph-stat"><strong>Offline</strong><span>Graph</span></div>';
   }
 }
 
@@ -508,6 +630,10 @@ function setupEventListeners() {
     sidebarEl.classList.toggle('hidden');
   });
 
+  graphBtnEl.addEventListener('click', () => {
+    window.location.hash = '/graph';
+  });
+
   settingsBtnEl.addEventListener('click', () => {
     settingsPanelEl.classList.toggle('hidden');
   });
@@ -546,7 +672,11 @@ function setupEventListeners() {
 
   window.addEventListener('hashchange', () => {
     const hash = window.location.hash.slice(1);
-    if (hash.startsWith('/article/')) {
+    if (hash === '/graph') {
+      currentArticle = null;
+      showGraphPage();
+      if (!tagGraph) loadTagGraph();
+    } else if (hash.startsWith('/article/')) {
       loadArticle(hash.slice(9));
     } else {
       currentArticle = null;
@@ -567,9 +697,12 @@ function init() {
 
   setupEventListeners();
   loadArticles();
+  loadTagGraph();
 
   const hash = window.location.hash.slice(1);
-  if (hash.startsWith('/article/')) {
+  if (hash === '/graph') {
+    showGraphPage();
+  } else if (hash.startsWith('/article/')) {
     loadArticle(hash.slice(9));
   } else {
     showLandingPage();

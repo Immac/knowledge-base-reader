@@ -11,8 +11,9 @@ Knowledge Base Reader is a small companion web app for browsing a markdown-based
 | HTTP server | `src/server.mjs` | Serves the app, exposes API routes, and returns static assets |
 | Data source | `src/data-source.mjs` | Discovers articles, parses frontmatter, normalizes tag models, and prepares related articles |
 | Tag model | `src/tag-model.mjs` | Normalizes display tags, semantic tags, and relationships |
+| Tag graph | `src/tag-network.mjs` | Builds the corpus DAG of tags and their relationships |
 | Relevance ranking | `src/relevance.mjs` | Scores related articles using exact-tag semantic heuristics |
-| Frontend | `public/app.js` | Renders the landing page, article view, sidebar, filters, and related rail |
+| Frontend | `public/app.js` | Renders the landing page, article view, graph page, sidebar, filters, and related rail |
 | Styles | `public/styles.css` | Controls layout, themes, cards, sidebar outline, and related match visuals |
 | Smoke tests | `tests/smoke.mjs` | Verifies the API and article routes |
 
@@ -22,7 +23,7 @@ Knowledge Base Reader is a small companion web app for browsing a markdown-based
 - **No build step**: the app runs directly on Node.js and serves static assets.
 - **Deterministic ranking**: related articles are based on exact `key:value` overlap over the semantic tag set, not fuzzy semantic similarity.
 - **Multiple data sources**: the reader looks for a local or pi knowledge base directory in a fixed order.
-- **Client-side navigation**: the UI swaps between landing and article views without a full reload.
+- **Client-side navigation**: the UI swaps between landing, article, and graph views without a full reload.
 
 ## Data Flow
 
@@ -30,12 +31,14 @@ Knowledge Base Reader is a small companion web app for browsing a markdown-based
 2. The frontend calls `GET /api/articles` to render the landing page.
 3. Clicking an article calls `GET /api/articles/:slug`.
 4. `src/data-source.mjs` parses the article, strips the leading H1, renders Markdown, extracts headings, and derives both display tags and semantic tags.
-5. `src/relevance.mjs` scores related articles from the semantic tag set, weighting rarer exact tags more heavily.
-6. The frontend renders:
+5. `src/tag-network.mjs` builds a DAG of tag nodes and corpus-derived edges.
+6. `src/relevance.mjs` scores related articles from the semantic tag set, weighting rarer exact tags more heavily.
+7. The frontend renders:
    - article content
    - sidebar section outline
    - display tags on the article header and cards
    - related article cards with match indicators and compact match explanations
+   - the special tag-graph page
 
 ## Related Article Ranking
 

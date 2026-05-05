@@ -2,6 +2,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getSourceInfo, listArticles, getArticle } from './data-source.mjs';
+import { buildTagDagGraph } from './tag-network.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -56,6 +57,12 @@ function handleRequest(req, res) {
     if (apiPath === '/articles') {
       const articles = listArticles();
       sendJSON(res, 200, { ok: true, articles });
+      return;
+    }
+
+    if (apiPath === '/tags/graph') {
+      const graph = buildTagDagGraph(listArticles());
+      sendJSON(res, 200, { ok: true, graph });
       return;
     }
 

@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { getSourceInfo, listArticles, getArticle } from '../src/data-source.mjs';
+import { buildTagDagGraph } from '../src/tag-network.mjs';
 
 // Test helpers
 function request(port, path) {
@@ -57,6 +58,21 @@ async function runTests(port) {
     failed++;
   }
 
+  // Test 2b: /api/tags/graph
+  try {
+    const res = await request(port, '/api/tags/graph');
+    if (res.status === 200 && res.body.ok && res.body.graph && Array.isArray(res.body.graph.nodes) && Array.isArray(res.body.graph.edges)) {
+      console.log(`✓ /api/tags/graph works (${res.body.graph.nodes.length} nodes, ${res.body.graph.edges.length} edges)`);
+      passed++;
+    } else {
+      console.log('✗ /api/tags/graph failed', res.body);
+      failed++;
+    }
+  } catch (e) {
+    console.log('✗ /api/tags/graph error', e.message);
+    failed++;
+  }
+
   // Test 3: Individual article routes
   const articles = listArticles();
   for (const article of articles) {
@@ -77,6 +93,21 @@ async function runTests(port) {
   if (articles.length > 0) {
     console.log(`✓ All ${articles.length} article routes work`);
     passed++;
+  }
+
+  // Test 3b: graph builder works from loaded articles
+  try {
+    const graph = buildTagDagGraph(articles);
+    if (graph && Array.isArray(graph.nodes) && Array.isArray(graph.edges) && graph.nodeCount > 0) {
+      console.log(`✓ buildTagDagGraph works (${graph.nodeCount} nodes, ${graph.edgeCount} edges)`);
+      passed++;
+    } else {
+      console.log('✗ buildTagDagGraph failed', graph);
+      failed++;
+    }
+  } catch (e) {
+    console.log('✗ buildTagDagGraph error', e.message);
+    failed++;
   }
 
   // Test 4: Missing article returns 404

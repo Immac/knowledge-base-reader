@@ -13,6 +13,7 @@ A companion web app for browsing the pi knowledge base. It discovers markdown ar
 - 🏷️ Filter by title, slug, or display `key:value` tags
 - 📚 View article sections in a sidebar outline
 - ✨ See ranked related articles with compact match indicators and short match explanations
+- 🕸️ Open a tag DAG graph page to explore how tags relate across the corpus
 - 🎨 Switch between multiple styles and layouts
 - 🧭 Use a landing page that highlights latest changes
 
@@ -25,7 +26,8 @@ A companion web app for browsing the pi knowledge base. It discovers markdown ar
 | `npm test` | Run smoke tests |
 | `GET /api/status` | Return the active data source and article count |
 | `GET /api/articles` | List all discovered articles |
-| `GET /api/articles/:slug` | Return a single article, rendered HTML, headings, and related items |
+| `GET /api/articles/:slug` | Return a single article, rendered HTML, headings, semantic tags, relationships, and related items |
+| `GET /api/tags/graph` | Return a DAG of tag nodes and edges derived from the article corpus |
 
 ## Quick Start
 
@@ -99,6 +101,7 @@ npm test
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 - [`RELATIONSHIP_RANKING_PLAN.md`](./RELATIONSHIP_RANKING_PLAN.md)
 - [`src/tag-model.mjs`](./src/tag-model.mjs)
+- [`src/tag-network.mjs`](./src/tag-network.mjs)
 - [`src/server.mjs`](./src/server.mjs)
 - [`src/data-source.mjs`](./src/data-source.mjs)
 - [`tests/smoke.mjs`](./tests/smoke.mjs)
