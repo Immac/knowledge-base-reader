@@ -2,27 +2,27 @@
 
 ## Purpose
 
-Knowledge Base Reader is a small companion web app for browsing a markdown-based knowledge base. It is optimized for deterministic rendering, low setup overhead, and easy inspection by LLMs and humans alike.
+Knowledge Base Reader is a small standalone web app for browsing a markdown-based knowledge base as a wiki-style interface. It focuses on deterministic rendering, low setup overhead, and easy inspection by humans and LLMs.
 
 ## System Components
 
 | Component | File(s) | Responsibility |
 | --- | --- | --- |
 | HTTP server | `src/server.mjs` | Serves the app, exposes API routes, and returns static assets |
-| Data source | `src/data-source.mjs` | Discovers articles, parses frontmatter, normalizes tag models, and prepares related articles |
+| Data source | `src/data-source.mjs` | Discovers articles, parses frontmatter, strips redundant titles, and prepares article payloads |
 | Tag model | `src/tag-model.mjs` | Normalizes display tags, semantic tags, and relationships |
 | Tag graph | `src/tag-network.mjs` | Builds the corpus DAG of tags and their relationships |
-| Relevance ranking | `src/relevance.mjs` | Scores related articles using exact-tag semantic heuristics |
+| Relevance ranking | `src/relevance.mjs` | Scores related articles using exact semantic-tag overlap and rarity weighting |
 | Frontend | `public/app.js` | Renders the landing page, article view, graph page, sidebar, filters, and related rail |
-| Styles | `public/styles.css` | Controls layout, themes, cards, sidebar outline, and related match visuals |
+| Styles | `public/styles.css` | Controls layout, themes, cards, graph controls, sidebar outline, and match visuals |
 | Smoke tests | `tests/smoke.mjs` | Verifies the API and article routes |
 
 ## Key Principles
 
 - **Markdown-first**: articles are stored as `.md` files with frontmatter.
 - **No build step**: the app runs directly on Node.js and serves static assets.
-- **Deterministic ranking**: related articles are based on exact `key:value` overlap over the semantic tag set, not fuzzy semantic similarity.
-- **Multiple data sources**: the reader looks for a local or pi knowledge base directory in a fixed order.
+- **Deterministic ranking**: related articles are based on exact semantic tag overlap, not fuzzy similarity.
+- **Clear data separation**: display tags, semantic tags, and tag relationships are modeled separately.
 - **Client-side navigation**: the UI swaps between landing, article, and graph views without a full reload.
 
 ## Data Flow
@@ -36,20 +36,18 @@ Knowledge Base Reader is a small companion web app for browsing a markdown-based
 7. The frontend renders:
    - article content
    - sidebar section outline
-   - display tags on the article header and cards
+   - display tags on cards and article headers
    - related article cards with match indicators and compact match explanations
-   - the special tag-graph page
+   - the special tag graph page
 
-## Related Article Ranking
+## Interaction Model
 
-Related articles are scored from exact `key:value` overlap in the semantic tag set only.
+The frontend is intentionally lightweight:
 
-- display tags stay separate from semantic tags
-- DAG-derived relationship tags can participate in ranking
-- exact tag matches are weighted by corpus rarity
-- tags that appear in many articles contribute less
-- the current article is excluded from the candidate set
-- the UI shows a compact visual match indicator plus a short match explanation instead of a numeric percentage
+- hash routing keeps navigation simple
+- graph interactions are handled entirely in the browser
+- the graph page supports pan, zoom, reset, fit, and mouse dragging
+- settings and layout controls update the active view without a page reload
 
 ## Why This Shape
 

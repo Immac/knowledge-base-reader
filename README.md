@@ -1,33 +1,33 @@
 # Knowledge Base Reader
 
-A companion web app for browsing the pi knowledge base. It discovers markdown articles, renders them as a searchable wiki, and ranks related articles by exact tag and DAG-derived semantic overlap.
+A standalone Node.js web app for browsing the pi knowledge base as a wiki-style reader. It renders markdown articles, supports tag-based filtering and ranking, shows section outlines, and exposes a tag DAG graph for exploration.
 
 ![JavaScript](https://img.shields.io/badge/JavaScript-ESM-yellow?style=flat-square&logo=javascript)
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js)
 ![MIT License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Pi Companion](https://img.shields.io/badge/pi-companion-orange?style=flat-square)
+![Web App](https://img.shields.io/badge/app-standalone-blue?style=flat-square)
 
 ## Features
 
-- 🔍 Browse articles from local or pi knowledge base sources
-- 🏷️ Filter by title, slug, or display `key:value` tags
-- 📚 View article sections in a sidebar outline
-- ✨ See ranked related articles with compact match indicators and short match explanations
-- 🕸️ Open a tag DAG graph page to explore how tags relate across the corpus
-- 🎨 Switch between multiple styles and layouts
-- 🧭 Use a landing page that highlights latest changes
+- 🔍 Browse markdown articles from a local or pi knowledge base directory
+- 🏷️ Filter by title, slug, excerpt, or exact `key:value` tags
+- 📚 Read articles with a sidebar section outline and multiple layouts/themes
+- ✨ See ranked related articles with compact match indicators and explanations
+- 🕸️ Explore the tag DAG on a dedicated graph page with pan/zoom controls
+- 🎨 Switch between distinct light and dark themes
+- 🧭 Start on a landing page that highlights the latest updates
 
-## Tools & Commands
+## API and UI
 
-| Command / Route | Description |
+| Route / UI | Description |
 | --- | --- |
-| `npm run dev` | Start the web app on `http://127.0.0.1:4173/` |
-| `npm start` | Start the server in production mode |
-| `npm test` | Run smoke tests |
-| `GET /api/status` | Return the active data source and article count |
-| `GET /api/articles` | List all discovered articles |
-| `GET /api/articles/:slug` | Return a single article, rendered HTML, headings, semantic tags, relationships, and related items |
-| `GET /api/tags/graph` | Return a DAG of tag nodes and edges derived from the article corpus |
+| `/` | Landing page with latest updates and article cards |
+| `#/article/:slug` | Article reader view |
+| `#/graph` | Tag DAG graph page |
+| `GET /api/status` | Data source and article count |
+| `GET /api/articles` | List all articles |
+| `GET /api/articles/:slug` | Return a rendered article payload |
+| `GET /api/tags/graph` | Return the tag DAG graph |
 
 ## Quick Start
 
@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-Then open:
+Open:
 
 ```text
 http://127.0.0.1:4173/
@@ -46,7 +46,7 @@ http://127.0.0.1:4173/
 
 ## Usage Examples
 
-### Open an article
+### Open a specific article
 
 ```text
 http://127.0.0.1:4173/#/article/knowledge-base-repository-overview
@@ -54,13 +54,13 @@ http://127.0.0.1:4173/#/article/knowledge-base-repository-overview
 
 ### Filter by tag
 
-Type a tag query in the sidebar filter:
+Type a tag query into the sidebar filter:
 
 ```text
 language:javascript
 ```
 
-### Point at a different knowledge base directory
+### Point the reader at another knowledge base directory
 
 ```bash
 KB_WIKI_DATA_DIR=/path/to/articles npm run dev
@@ -79,7 +79,7 @@ KB_WIKI_DATA_DIR=/path/to/articles npm run dev
 npm install
 ```
 
-### Run
+### Run locally
 
 ```bash
 npm run dev
@@ -93,16 +93,17 @@ npm test
 
 ### Notes
 
-- The app is plain JavaScript ESM; there is no build step.
-- Dependencies are `gray-matter` for frontmatter parsing and `marked` for Markdown rendering.
+- This project is plain JavaScript ESM; there is no build step.
+- Core runtime dependencies are `gray-matter` for frontmatter parsing and `marked` for Markdown rendering.
+- The app is intentionally lightweight so it can be inspected easily by humans and LLMs.
 
 ## Resources
 
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 - [`RELATIONSHIP_RANKING_PLAN.md`](./RELATIONSHIP_RANKING_PLAN.md)
-- [`src/tag-model.mjs`](./src/tag-model.mjs)
-- [`src/tag-network.mjs`](./src/tag-network.mjs)
 - [`src/server.mjs`](./src/server.mjs)
 - [`src/data-source.mjs`](./src/data-source.mjs)
+- [`src/tag-model.mjs`](./src/tag-model.mjs)
+- [`src/tag-network.mjs`](./src/tag-network.mjs)
+- [`src/relevance.mjs`](./src/relevance.mjs)
 - [`tests/smoke.mjs`](./tests/smoke.mjs)
-- Repository: `git@github.com:Immac/knowledge-base-reader.git`
