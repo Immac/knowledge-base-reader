@@ -44,7 +44,8 @@ async function runTests(port) {
   // Test 2: /api/articles
   try {
     const res = await request(port, '/api/articles');
-    if (res.status === 200 && res.body.ok && Array.isArray(res.body.articles)) {
+    const firstArticle = res.body.articles?.[0];
+    if (res.status === 200 && res.body.ok && Array.isArray(res.body.articles) && Array.isArray(firstArticle?.displayTags) && Array.isArray(firstArticle?.semanticTags)) {
       console.log(`✓ /api/articles works (${res.body.articles.length} articles)`);
       passed++;
     } else {
@@ -61,7 +62,7 @@ async function runTests(port) {
   for (const article of articles) {
     try {
       const res = await request(port, `/api/articles/${article.slug}`);
-      if (res.status === 200 && res.body.ok && res.body.article) {
+      if (res.status === 200 && res.body.ok && res.body.article && Array.isArray(res.body.article.displayTags) && Array.isArray(res.body.article.semanticTags)) {
         // OK
       } else {
         console.log(`✗ /api/articles/${article.slug} failed`);

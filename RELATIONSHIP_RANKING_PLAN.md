@@ -12,6 +12,10 @@ This plan covers the **tag-based heuristic relevance system** only.
 
 It does **not** include title or body-text similarity in the heuristic layer, because those signals are intended for a separate RAG-based ranking system later.
 
+The reader distinguishes between:
+- **display tags**: the article’s own frontmatter tags
+- **semantic tags**: display tags plus DAG-derived relationship tags
+
 ## Design Principle
 Use two independent ranking systems:
 
@@ -26,11 +30,12 @@ Use two independent ranking systems:
    - No double-counting of title or body text in the heuristic layer
 
 ## Heuristic Inputs
-The heuristic should use only tag data from article metadata.
+The heuristic should use only tag data from article metadata and any DAG-derived semantic tags.
 
 Recommended tag sources:
 - human-authored frontmatter tags
 - future LLM-generated tags
+- relationship-derived semantic tags
 - any normalized tag variants that are stored as tags
 
 Recommended tag shape:
@@ -38,7 +43,7 @@ Recommended tag shape:
 - optional support for tag groups later, if needed
 
 ## Heuristic Scoring Model
-Score article A against article B using only exact tag overlap.
+Score article A against article B using only exact tag overlap from the semantic tag set.
 
 Suggested scoring rules:
 - **Exact key:value match**: the only match type
@@ -47,7 +52,7 @@ Suggested scoring rules:
 
 Example weighting formula:
 - compute tag rarity with an IDF-style weight across the corpus
-- aggregate exact tag overlap with a weighted F1-style score
+- aggregate exact semantic-tag overlap with a weighted F1-style score
 - use the weighted score for ranking and display
 
 ## Ranking Output
@@ -56,10 +61,8 @@ Return a ranked list of related articles with:
 - `title`
 - `score`
 - `matchedTags`
-
-Optional later fields:
-- `reason` for display/debugging
-- `scoreBreakdown` for explainability
+- `reason`
+- `scoreBreakdown`
 
 ## Data Model Notes
 Keep generated tags separate from source metadata if helpful, but expose them through a unified tag set for heuristic scoring.

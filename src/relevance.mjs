@@ -1,33 +1,20 @@
+import { normalizeTagCollection, tagSignature } from './tag-model.mjs';
+
 const DEBUG_RELEVANCE = process.env.KB_RELEVANCE_DEBUG === '1';
 
 function normalizeToken(value) {
   return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-function createTagIndex(tags = {}) {
-  const entries = [];
+function createTagIndex(tags = []) {
+  const entries = normalizeTagCollection(tags);
   const bySignature = new Map();
-  const byKey = new Map();
 
-  for (const [rawKey, rawValue] of Object.entries(tags || {})) {
-    const key = normalizeToken(rawKey);
-    const value = normalizeToken(rawValue);
-
-    if (!key || !value) continue;
-
-    const entry = { key, value, rawKey, rawValue };
-    entries.push(entry);
-
-    const signature = `${key}\u0000${value}`;
-    bySignature.set(signature, entry);
-
-    if (!byKey.has(key)) {
-      byKey.set(key, new Set());
-    }
-    byKey.get(key).add(value);
+  for (const entry of entries) {
+    bySignature.set(tagSignature(entry), entry);
   }
 
-  return { entries, bySignature, byKey };
+  return { entries, bySignature };
 }
 
 function buildCorpusStats(articles = []) {
@@ -36,15 +23,15 @@ function buildCorpusStats(articles = []) {
 
   for (const article of articles || []) {
     if (!article) continue;
-    const articleId = article.slug || article.title || JSON.stringify(article.tags || {});
+    const articleId = article.slug || article.title || JSON.stringify(article.semanticTags || article.displayTags || article.tags || []);
     if (uniqueArticles.has(articleId)) continue;
     uniqueArticles.add(articleId);
 
-    const index = createTagIndex(article.tags || {});
+    const index = createTagIndex(article.semanticTags ?? article.displayTags ?? article.tags ?? []);
     const seenSignatures = new Set();
 
     for (const entry of index.entries) {
-      const signature = `${entry.key}\u0000${entry.value}`;
+      const signature = tagSignature(entry);
       if (seenSignatures.has(signature)) continue;
       seenSignatures.add(signature);
       signatureCounts.set(signature, (signatureCounts.get(signature) || 0) + 1);
@@ -70,8 +57,8 @@ function withDebugAspect(name, fn) {
 
     const start = Date.now();
     console.debug(`[relevance:${name}] enter`, {
-      aTags: Object.keys(args[0] || {}).length,
-      bTags: Object.keys(args[1] || {}).length,
+      aTags: (args[0]?.semanticTags || args[0]?.displayTags || args[0]?.tags || []).length,
+      bTags: (args[1]?.semanticTags || args[1]?.displayTags || args[1]?.tags || []).length,
     });
 
     try {
@@ -92,9 +79,9 @@ function withDebugAspect(name, fn) {
   };
 }
 
-function scoreArticleRelevanceImpl(articleTags, candidateTags, corpusStats = {}) {
-  const articleIndex = createTagIndex(articleTags);
-  const candidateIndex = createTagIndex(candidateTags);
+function scoreArticleRelevanceImpl(article, candidate, corpusStats = {}) {
+  const articleIndex = createTagIndex(article?.semanticTags ?? article?.displayTags ?? article?.tags ?? []);
+  const candidateIndex = createTagIndex(candidate?.semanticTags ?? candidate?.displayTags ?? candidate?.tags ?? []);
   const matchedTags = [];
 
   const totalArticles = corpusStats.totalArticles || 0;
@@ -105,17 +92,16 @@ function scoreArticleRelevanceImpl(articleTags, candidateTags, corpusStats = {})
   let candidateWeight = 0;
 
   for (const entry of articleIndex.entries) {
-    const signature = `${entry.key}\u0000${entry.value}`;
-    articleWeight += inverseDocumentFrequency(signatureCounts.get(signature) || 0, totalArticles);
+    articleWeight += inverseDocumentFrequency(signatureCounts.get(tagSignature(entry)) || 0, totalArticles);
   }
 
-  for (const candidate of candidateIndex.entries) {
-    const signature = `${candidate.key}\u0000${candidate.value}`;
+  for (const candidateTag of candidateIndex.entries) {
+    const signature = tagSignature(candidateTag);
     const weight = inverseDocumentFrequency(signatureCounts.get(signature) || 0, totalArticles);
     candidateWeight += weight;
 
     if (articleIndex.bySignature.has(signature)) {
-      matchedTags.push({ key: candidate.rawKey, value: candidate.rawValue });
+      matchedTags.push({ key: candidateTag.key, value: candidateTag.value });
       matchedWeight += weight;
     }
   }
@@ -124,11 +110,16 @@ function scoreArticleRelevanceImpl(articleTags, candidateTags, corpusStats = {})
   const recall = articleWeight > 0 ? matchedWeight / articleWeight : 0;
   const relevanceScore = matchedWeight > 0 ? (2 * precision * recall) / (precision + recall) : 0;
   const relevancePercent = Math.round(relevanceScore * 100);
+  const reasonTags = matchedTags.slice(0, 3).map((tag) => `${tag.key}:${tag.value}`);
+  const reason = matchedTags.length > 0
+    ? `Matched on ${matchedTags.length} tag${matchedTags.length === 1 ? '' : 's'}${reasonTags.length > 0 ? `: ${reasonTags.join(' · ')}` : ''}`
+    : '';
 
   return {
     score: relevanceScore,
     relevancePercent,
     matchedTags,
+    reason,
     scoreBreakdown: {
       matchedWeight,
       articleWeight,
@@ -152,13 +143,14 @@ function rankRelatedArticlesImpl(article, candidates) {
   const ranked = candidates
     .filter(candidate => !isSameArticle(article, candidate))
     .map(candidate => {
-      const result = scoreArticleRelevanceImpl(article?.tags || {}, candidate?.tags || {}, corpusStats);
+      const result = scoreArticleRelevanceImpl(article, candidate, corpusStats);
       return {
         slug: candidate.slug,
         title: candidate.title,
         score: result.score,
         relevancePercent: result.relevancePercent,
         matchedTags: result.matchedTags,
+        reason: result.reason,
         scoreBreakdown: result.scoreBreakdown,
       };
     })

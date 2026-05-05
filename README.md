@@ -1,6 +1,6 @@
 # Knowledge Base Reader
 
-A companion web app for browsing the pi knowledge base. It discovers markdown articles, renders them as a searchable wiki, and ranks related articles by exact tag overlap.
+A companion web app for browsing the pi knowledge base. It discovers markdown articles, renders them as a searchable wiki, and ranks related articles by exact tag and DAG-derived semantic overlap.
 
 ![JavaScript](https://img.shields.io/badge/JavaScript-ESM-yellow?style=flat-square&logo=javascript)
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js)
@@ -10,9 +10,9 @@ A companion web app for browsing the pi knowledge base. It discovers markdown ar
 ## Features
 
 - 🔍 Browse articles from local or pi knowledge base sources
-- 🏷️ Filter by title, slug, or `key:value` tags
+- 🏷️ Filter by title, slug, or display `key:value` tags
 - 📚 View article sections in a sidebar outline
-- ✨ See ranked related articles with compact match indicators
+- ✨ See ranked related articles with compact match indicators and short match explanations
 - 🎨 Switch between multiple styles and layouts
 - 🧭 Use a landing page that highlights latest changes
 
@@ -98,6 +98,7 @@ npm test
 
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 - [`RELATIONSHIP_RANKING_PLAN.md`](./RELATIONSHIP_RANKING_PLAN.md)
+- [`src/tag-model.mjs`](./src/tag-model.mjs)
 - [`src/server.mjs`](./src/server.mjs)
 - [`src/data-source.mjs`](./src/data-source.mjs)
 - [`tests/smoke.mjs`](./tests/smoke.mjs)

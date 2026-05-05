@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { marked } from 'marked';
 import { rankRelatedArticles } from './relevance.mjs';
+import { normalizeArticleTagModel } from './tag-model.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,10 +43,18 @@ export function listArticles() {
 
     const excerpt = content.slice(0, 200).replace(/[#*`]/g, '').trim() + '...';
 
+    const tagModel = normalizeArticleTagModel({
+      tags: data.tags || [],
+      relationships: data.relationships || [],
+    });
+
     articles.push({
       slug,
       title: data.title || slug,
-      tags: data.tags || {},
+      tags: tagModel.displayTags,
+      displayTags: tagModel.displayTags,
+      semanticTags: tagModel.semanticTags,
+      relationships: tagModel.relationships,
       excerpt,
       created: data.created,
       modified: data.modified,
@@ -104,18 +113,25 @@ export function getArticle(slug) {
   const parsed = matter(raw);
   const data = parsed.data;
   const content = parsed.content;
+  const tagModel = normalizeArticleTagModel({
+    tags: data.tags || [],
+    relationships: data.relationships || [],
+  });
 
   const bodyContent = stripLeadingHeading(content);
   const html = marked.parse(bodyContent);
   const headings = extractHeadings(bodyContent);
 
   const allArticles = listArticles();
-  const related = rankRelatedArticles({ slug, tags: data.tags || {} }, allArticles);
+  const related = rankRelatedArticles({ slug, semanticTags: tagModel.semanticTags, displayTags: tagModel.displayTags }, allArticles);
 
   return {
     slug,
     title: data.title || slug,
-    tags: data.tags || {},
+    tags: tagModel.displayTags,
+    displayTags: tagModel.displayTags,
+    semanticTags: tagModel.semanticTags,
+    relationships: tagModel.relationships,
     content,
     html,
     headings,

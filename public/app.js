@@ -1,3 +1,74 @@
+function normalizeToken(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function normalizeTagCollection(tags) {
+  const input = Array.isArray(tags) ? tags : Object.entries(tags || {});
+  const result = [];
+  const seen = new Set();
+
+  for (const tag of input) {
+    let key = '';
+    let value = '';
+
+    if (Array.isArray(tag)) {
+      key = String(tag[0] ?? '').trim();
+      if (typeof tag[1] === 'string' && /^\d+$/.test(String(tag[0])) && tag[1].includes(':')) {
+        const index = tag[1].indexOf(':');
+        key = tag[1].slice(0, index).trim();
+        value = tag[1].slice(index + 1).trim();
+      } else if (typeof tag[1] === 'string') {
+        value = tag[1].trim();
+      } else if (Array.isArray(tag[1])) {
+        for (const item of tag[1]) {
+          if (typeof item !== 'string') continue;
+          const signature = `${normalizeToken(key)}\u0000${normalizeToken(item)}`;
+          if (!key || !item.trim() || seen.has(signature)) continue;
+          seen.add(signature);
+          result.push({ key, value: item.trim() });
+        }
+        continue;
+      } else if (tag[1] && typeof tag[1] === 'object') {
+        const first = Object.entries(tag[1]).find(([, entryValue]) => typeof entryValue === 'string');
+        if (first) {
+          value = first[1].trim();
+        }
+      }
+    } else if (typeof tag === 'string') {
+      const index = tag.indexOf(':');
+      if (index === -1) continue;
+      key = tag.slice(0, index).trim();
+      value = tag.slice(index + 1).trim();
+    } else if (tag && typeof tag === 'object') {
+      if (typeof tag.key === 'string') {
+        key = tag.key.trim();
+        value = typeof tag.value === 'string' ? tag.value.trim() : '';
+      }
+    }
+
+    if (!key || !value) continue;
+    const signature = `${normalizeToken(key)}\u0000${normalizeToken(value)}`;
+    if (seen.has(signature)) continue;
+    seen.add(signature);
+    result.push({ key, value });
+  }
+
+  return result;
+}
+
+function getDisplayTags(article) {
+  return normalizeTagCollection(article?.displayTags ?? article?.tags ?? []);
+}
+
+function getRelatedSummary(relatedItem) {
+  const matchedTags = relatedItem?.matchedTags || [];
+  if (relatedItem?.reason) return relatedItem.reason;
+  if (matchedTags.length === 0) return '';
+  const preview = matchedTags.slice(0, 3).map(tag => `${tag.key}:${tag.value}`).join(' · ');
+  const suffix = matchedTags.length > 3 ? ` · +${matchedTags.length - 3}` : '';
+  return `Matched on ${matchedTags.length} tag${matchedTags.length === 1 ? '' : 's'}${preview ? `: ${preview}${suffix}` : ''}`;
+}
+
 // Generate deterministic tag colors from tag text
 function generateTagColor(key, value, isDark) {
   // Split influence: key affects hue, value modifies saturation/lightness
@@ -120,18 +191,18 @@ function renderTagChips(container, tags, clickable = false) {
   container.innerHTML = '';
   const dark = isDarkStyle(style);
 
-  for (const [key, value] of Object.entries(tags || {})) {
+  for (const tag of normalizeTagCollection(tags)) {
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
-    chip.textContent = `${key}:${value}`;
-    const colors = generateTagColor(key, value, dark);
+    chip.textContent = `${tag.key}:${tag.value}`;
+    const colors = generateTagColor(tag.key, tag.value, dark);
     chip.style.background = colors.bg;
     chip.style.color = colors.text;
 
     if (clickable) {
       chip.addEventListener('click', evt => {
         evt.stopPropagation();
-        filterInput.value = `${key}:${value}`;
+        filterInput.value = `${tag.key}:${tag.value}`;
         currentFilter = filterInput.value;
         filterArticles();
         showLandingPage();
@@ -153,7 +224,7 @@ function createArticleCard(article) {
     <div class="tag-chips"></div>
   `;
 
-  renderTagChips(card.querySelector('.tag-chips'), article.tags, true);
+  renderTagChips(card.querySelector('.tag-chips'), getDisplayTags(article), true);
   card.addEventListener('click', () => navigateTo(article.slug));
   return card;
 }
@@ -326,6 +397,7 @@ function renderRelated(related) {
     const titleLabel = document.createElement('span');
     titleLabel.className = 'related-title-label';
     titleLabel.textContent = r.title;
+    title.title = getRelatedSummary(r);
     title.appendChild(titleLabel);
 
     const tags = document.createElement('div');
@@ -348,12 +420,18 @@ function renderRelated(related) {
       tags.appendChild(more);
     }
 
+    const reason = document.createElement('div');
+    reason.className = 'related-reason';
+    reason.textContent = getRelatedSummary(r) || 'Related by semantic tags';
+    reason.title = getRelatedSummary(r) || reason.textContent;
+
     const percent = r.relevancePercent || 0;
     const matchLevel = percent >= 80 ? 4 : percent >= 66 ? 3 : percent >= 44 ? 2 : 1;
     title.appendChild(createMatchIcon(matchLevel));
 
     li.appendChild(title);
     li.appendChild(tags);
+    li.appendChild(reason);
     relatedListEl.appendChild(li);
   }
 }
@@ -365,7 +443,7 @@ function filterArticles() {
   if (query) {
     if (query.includes(':')) {
       const [key, value] = query.split(':');
-      filtered = articles.filter(a => Object.entries(a.tags || {}).some(([k, v]) => k.toLowerCase().includes(key) && v.toLowerCase().includes(value)));
+      filtered = articles.filter(a => getDisplayTags(a).some(tag => normalizeToken(tag.key).includes(key) && normalizeToken(tag.value).includes(value)));
     } else {
       filtered = articles.filter(a => a.title.toLowerCase().includes(query) || a.slug.toLowerCase().includes(query) || (a.excerpt || '').toLowerCase().includes(query));
     }
@@ -395,7 +473,7 @@ async function loadArticle(slug) {
 
   articleTitleEl.textContent = currentArticle.title;
   articleMetaEl.textContent = `Last modified: ${new Date(currentArticle.modified).toLocaleDateString()}`;
-  renderTagChips(tagChipsEl, currentArticle.tags);
+  renderTagChips(tagChipsEl, getDisplayTags(currentArticle));
   renderSections(currentArticle.headings);
   articleBodyEl.innerHTML = currentArticle.html;
 
