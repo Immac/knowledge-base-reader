@@ -24,23 +24,117 @@ export function resolveDataSource() {
   return null;
 }
 
-export function listArticles() {
-  const sourceDir = resolveDataSource();
-  if (!sourceDir) {
-    return [];
+// ── Block reference resolution ──────────────────────────────────
+
+const BLOCK_REF_RE = /!block:([a-z0-9-]+(?:\/[a-z0-9-]+)?)/g;
+
+/**
+ * Resolve !block: references in article content.
+ * Same-article:  !block:name  → articles/{slug}/{name}.md
+ * Cross-article: !block:other/name → articles/{other}/{name}.md
+ * Falls back to returning the raw !block: text if the block file isn't found.
+ */
+function resolveBlockReferences(content, articleSlug, articlesDir) {
+  return content.replace(BLOCK_REF_RE, (raw, ref) => {
+    let blockSlug = articleSlug;
+    let blockName = ref;
+
+    const slashIndex = ref.indexOf('/');
+    if (slashIndex !== -1) {
+      blockSlug = ref.slice(0, slashIndex);
+      blockName = ref.slice(slashIndex + 1);
+    }
+
+    const blockPath = path.join(articlesDir, blockSlug, `${blockName}.md`);
+    if (!fs.existsSync(blockPath)) return raw;
+
+    try {
+      const rawBlock = fs.readFileSync(blockPath, 'utf-8');
+      const parsed = matter(rawBlock);
+      return parsed.content;
+    } catch {
+      return raw;
+    }
+  });
+}
+
+// ── Article helpers ─────────────────────────────────────────────
+
+function isMarkdownFile(name) {
+  return name.endsWith('.md');
+}
+
+/** Check if a data source uses the new folder-per-article layout */
+function hasFolderArticles(sourceDir) {
+  const articlesDir = path.join(sourceDir, 'articles');
+  return fs.existsSync(articlesDir) && fs.statSync(articlesDir).isDirectory();
+}
+
+/** Get the articles subfolder path */
+function getArticlesDir(sourceDir) {
+  return path.join(sourceDir, 'articles');
+}
+
+/** Read the raw frontmatter + content from either folder-based or flat article */
+function readArticleRaw(sourceDir, slug) {
+  // 1. Try folder-based: articles/{slug}/ARTICLE.md
+  if (hasFolderArticles(sourceDir)) {
+    const folderPath = path.join(getArticlesDir(sourceDir), slug, 'ARTICLE.md');
+    if (fs.existsSync(folderPath)) {
+      const raw = fs.readFileSync(folderPath, 'utf-8');
+      return { raw, filePath: folderPath, isFolder: true };
+    }
   }
 
-  const files = fs.readdirSync(sourceDir).filter(f => f.endsWith('.md'));
+  // 2. Try legacy flat: {slug}.md (at sourceDir or articles/ as a flat directory)
+  const legacyPaths = [
+    path.join(sourceDir, `${slug}.md`),
+    path.join(getArticlesDir(sourceDir), `${slug}.md`),
+  ];
+
+  for (const legacyPath of legacyPaths) {
+    if (fs.existsSync(legacyPath)) {
+      const raw = fs.readFileSync(legacyPath, 'utf-8');
+      return { raw, filePath: legacyPath, isFolder: false };
+    }
+  }
+
+  return null;
+}
+
+/** List all article slugs from a data source */
+function listArticleSlugs(sourceDir) {
+  if (hasFolderArticles(sourceDir)) {
+    const articlesDir = getArticlesDir(sourceDir);
+    return fs.readdirSync(articlesDir)
+      .filter(entry => {
+        const statPath = path.join(articlesDir, entry);
+        return fs.statSync(statPath).isDirectory();
+      });
+  }
+
+  // Legacy flat files
+  return fs.readdirSync(sourceDir)
+    .filter(f => isMarkdownFile(f))
+    .map(f => f.replace(/\.md$/, ''));
+}
+
+// ── Public API ──────────────────────────────────────────────────
+
+export function listArticles() {
+  const sourceDir = resolveDataSource();
+  if (!sourceDir) return [];
+
+  const slugs = listArticleSlugs(sourceDir);
   const articles = [];
 
-  for (const file of files) {
-    const filePath = path.join(sourceDir, file);
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const parsed = matter(raw);
+  for (const slug of slugs) {
+    const result = readArticleRaw(sourceDir, slug);
+    if (!result) continue;
+
+    const parsed = matter(result.raw);
     const data = parsed.data;
     const content = parsed.content;
-    const slug = file.replace(/\.md$/, '');
-
     const excerpt = content.slice(0, 200).replace(/[#*`]/g, '').trim() + '...';
 
     const tagModel = normalizeArticleTagModel({
@@ -100,30 +194,35 @@ function extractHeadings(content) {
 
 export function getArticle(slug) {
   const sourceDir = resolveDataSource();
-  if (!sourceDir) {
-    return null;
-  }
+  if (!sourceDir) return null;
 
-  const filePath = path.join(sourceDir, `${slug}.md`);
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
+  const result = readArticleRaw(sourceDir, slug);
+  if (!result) return null;
 
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  const parsed = matter(raw);
+  const parsed = matter(result.raw);
   const data = parsed.data;
-  const content = parsed.content;
+  let content = parsed.content;
   const tagModel = normalizeArticleTagModel({
     tags: data.tags || [],
     relationships: data.relationships || [],
   });
+
+  // Resolve !block: references when the article lives under articles/
+  const articlesDir = getArticlesDir(sourceDir);
+  const articlesDirExists = fs.existsSync(articlesDir);
+  if (articlesDirExists && content.includes('!block:')) {
+    content = resolveBlockReferences(content, slug, articlesDir);
+  }
 
   const bodyContent = stripLeadingHeading(content);
   const html = marked.parse(bodyContent);
   const headings = extractHeadings(bodyContent);
 
   const allArticles = listArticles();
-  const related = rankRelatedArticles({ slug, semanticTags: tagModel.semanticTags, displayTags: tagModel.displayTags }, allArticles);
+  const related = rankRelatedArticles(
+    { slug, semanticTags: tagModel.semanticTags, displayTags: tagModel.displayTags },
+    allArticles
+  );
 
   return {
     slug,
@@ -143,9 +242,7 @@ export function getArticle(slug) {
 
 export function getSourceInfo() {
   const sourceDir = resolveDataSource();
-  if (!sourceDir) {
-    return { path: null, count: 0 };
-  }
+  if (!sourceDir) return { path: null, count: 0 };
 
   const count = listArticles().length;
   return { path: sourceDir, count };
