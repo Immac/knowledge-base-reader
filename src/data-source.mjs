@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import matter from 'gray-matter';
 import { parse as parseToml } from 'smol-toml';
 import { marked } from 'marked';
 import { rankRelatedArticles } from './relevance.mjs';
@@ -31,8 +30,8 @@ const BLOCK_REF_RE = /!block:([a-z0-9-]+(?:\/[a-z0-9-]+)?)/g;
 
 /**
  * Resolve !block: references in article content.
- * Same-article:  !block:name  → articles/{slug}/{name}.toml (or .md fallback)
- * Cross-article: !block:other/name → articles/{other}/{name}.toml (or .md fallback)
+ * Same-article:  !block:name  → articles/{slug}/{name}.toml
+ * Cross-article: !block:other/name → articles/{other}/{name}.toml
  * Falls back to returning the raw !block: text if the block file isn't found.
  */
 function resolveBlockReferences(content, articleSlug, articlesDir) {
@@ -46,26 +45,19 @@ function resolveBlockReferences(content, articleSlug, articlesDir) {
       blockName = ref.slice(slashIndex + 1);
     }
 
-    // Try TOML first, then MD
     const tomlPath = path.join(articlesDir, blockSlug, `${blockName}.toml`);
-    const mdPath = path.join(articlesDir, blockSlug, `${blockName}.md`);
-    const blockPath = fs.existsSync(tomlPath) ? tomlPath : mdPath;
-    if (!fs.existsSync(blockPath)) return raw;
+    if (!fs.existsSync(tomlPath)) return raw;
 
     try {
-      const rawBlock = fs.readFileSync(blockPath, 'utf-8');
-      if (blockPath.endsWith('.toml')) {
-        const parsed = parseToml(rawBlock);
-        const body = parsed.body ?? [];
-        return body.map(node => {
-          if (node.type === 'heading') return '#'.repeat(node.level) + ' ' + node.text;
-          if (node.type === 'text') return node.markdown;
-          if (node.type === 'block') return '!block:' + node.ref;
-          return '';
-        }).join('\n\n');
-      }
-      const parsed = matter(rawBlock);
-      return parsed.content;
+      const rawBlock = fs.readFileSync(tomlPath, 'utf-8');
+      const parsed = parseToml(rawBlock);
+      const body = parsed.body ?? [];
+      return body.map(node => {
+        if (node.type === 'heading') return '#'.repeat(node.level) + ' ' + node.text;
+        if (node.type === 'text') return node.markdown;
+        if (node.type === 'block') return '!block:' + node.ref;
+        return '';
+      }).join('\n\n');
     } catch {
       return raw;
     }
@@ -73,10 +65,6 @@ function resolveBlockReferences(content, articleSlug, articlesDir) {
 }
 
 // ── Article helpers ─────────────────────────────────────────────
-
-function isMarkdownFile(name) {
-  return name.endsWith('.md');
-}
 
 /** Check if a data source uses the new folder-per-article layout */
 function hasFolderArticles(sourceDir) {
@@ -89,7 +77,7 @@ function getArticlesDir(sourceDir) {
   return path.join(sourceDir, 'articles');
 }
 
-/** Read the raw article from either TOML or MD format */
+/** Read the raw article TOML content */
 function readArticleRaw(sourceDir, slug) {
   if (!hasFolderArticles(sourceDir)) return null;
 
@@ -99,27 +87,7 @@ function readArticleRaw(sourceDir, slug) {
   const tomlPath = path.join(articlesDir, slug, 'ARTICLE.toml');
   if (fs.existsSync(tomlPath)) {
     const raw = fs.readFileSync(tomlPath, 'utf-8');
-    return { raw, filePath: tomlPath, isFolder: true, format: 'toml' };
-  }
-
-  // Fallback to MD
-  const mdPath = path.join(articlesDir, slug, 'ARTICLE.md');
-  if (fs.existsSync(mdPath)) {
-    const raw = fs.readFileSync(mdPath, 'utf-8');
-    return { raw, filePath: mdPath, isFolder: true, format: 'markdown' };
-  }
-
-  // Legacy flat files
-  const legacyPaths = [
-    path.join(sourceDir, `${slug}.md`),
-    path.join(articlesDir, `${slug}.md`),
-  ];
-
-  for (const legacyPath of legacyPaths) {
-    if (fs.existsSync(legacyPath)) {
-      const raw = fs.readFileSync(legacyPath, 'utf-8');
-      return { raw, filePath: legacyPath, isFolder: false, format: 'markdown' };
-    }
+    return { raw, filePath: tomlPath, isFolder: true };
   }
 
   return null;
@@ -136,49 +104,35 @@ function listArticleSlugs(sourceDir) {
       });
   }
 
-  // Legacy flat files
-  return fs.readdirSync(sourceDir)
-    .filter(f => isMarkdownFile(f))
-    .map(f => f.replace(/\.md$/, ''));
+  // No folder articles found and legacy flat files are no longer supported
+  return [];
 }
 
-/** Parse article data from raw content, handling both TOML and MD formats */
-function parseArticleData(raw, format) {
-  if (format === 'toml') {
-    const data = parseToml(raw);
-    const meta = data.meta ?? {};
-    const tagsRaw = data.tags ?? [];
-    const relationships = (data.relationships ?? []).map(r => ({
-      predicate: r.predicate ?? '',
-      target: r.target ?? '',
-      qualifiers: (r.qualifiers ?? []).map(q => ({ key: q.key ?? '', value: q.value ?? '' })),
-    }));
-    // Render body nodes to content string
-    const body = data.body ?? [];
-    const content = body.map(node => {
-      if (node.type === 'heading') return '#'.repeat(node.level) + ' ' + node.text;
-      if (node.type === 'text') return node.markdown;
-      if (node.type === 'block') return '!block:' + node.ref;
-      return '';
-    }).join('\n\n');
-    return {
-      title: meta.title || '',
-      tags: tagsRaw.map(t => ({ key: t.key ?? '', value: t.value ?? '' })),
-      relationships,
-      content,
-      created: meta.created,
-      modified: meta.modified,
-    };
-  }
-  // MD format
-  const parsed = matter(raw);
+/** Parse article data from raw TOML content */
+function parseArticleData(raw) {
+  const data = parseToml(raw);
+  const meta = data.meta ?? {};
+  const tagsRaw = data.tags ?? [];
+  const relationships = (data.relationships ?? []).map(r => ({
+    predicate: r.predicate ?? '',
+    target: r.target ?? '',
+    qualifiers: (r.qualifiers ?? []).map(q => ({ key: q.key ?? '', value: q.value ?? '' })),
+  }));
+  // Render body nodes to content string
+  const body = data.body ?? [];
+  const content = body.map(node => {
+    if (node.type === 'heading') return '#'.repeat(node.level) + ' ' + node.text;
+    if (node.type === 'text') return node.markdown;
+    if (node.type === 'block') return '!block:' + node.ref;
+    return '';
+  }).join('\n\n');
   return {
-    title: parsed.data.title || '',
-    tags: parsed.data.tags || [],
-    relationships: parsed.data.relationships || [],
-    content: parsed.content,
-    created: parsed.data.created,
-    modified: parsed.data.modified,
+    title: meta.title || '',
+    tags: tagsRaw.map(t => ({ key: t.key ?? '', value: t.value ?? '' })),
+    relationships,
+    content,
+    created: meta.created,
+    modified: meta.modified,
   };
 }
 
@@ -195,7 +149,7 @@ export function listArticles() {
     const result = readArticleRaw(sourceDir, slug);
     if (!result) continue;
 
-    const { title, tags, relationships, content, created, modified } = parseArticleData(result.raw, result.format);
+    const { title, tags, relationships, content, created, modified } = parseArticleData(result.raw);
     const excerpt = content.slice(0, 200).replace(/[#*`]/g, '').trim() + '...';
 
     const tagModel = normalizeArticleTagModel({
@@ -260,7 +214,7 @@ export function getArticle(slug) {
   const result = readArticleRaw(sourceDir, slug);
   if (!result) return null;
 
-  const { title, tags, relationships, content: rawContent, created, modified } = parseArticleData(result.raw, result.format);
+  const { title, tags, relationships, content: rawContent, created, modified } = parseArticleData(result.raw);
   let content = rawContent;
   const tagModel = normalizeArticleTagModel({
     tags,
@@ -286,7 +240,7 @@ export function getArticle(slug) {
 
   return {
     slug,
-    title: data.title || slug,
+    title: title || slug,
     tags: tagModel.displayTags,
     displayTags: tagModel.displayTags,
     semanticTags: tagModel.semanticTags,

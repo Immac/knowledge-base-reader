@@ -10,7 +10,6 @@
     "test": "node tests/smoke.mjs"
   },
   "dependencies": {
-    "gray-matter": "^4.0.3",
     "marked": "^15.0.0",
     "smol-toml": "1.7.1"
   }
